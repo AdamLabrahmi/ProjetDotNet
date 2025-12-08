@@ -1,0 +1,209 @@
+﻿@{
+    Layout = null;
+    var title = ViewBag.Title ?? "Dashboard";
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@title - TaskFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-gradient-to-b from-teal-600 to-emerald-700 text-white fixed h-full z-30 sidebar-transition lg:translate-x-0 -translate-x-full">
+            <div class="flex flex-col h-full">
+                <!-- Logo -->
+                <div class="flex items-center justify-between p-6 border-b border-teal-500">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tasks text-teal-600 text-xl"></i>
+                        </div>
+                        <span class="text-xl font-bold">TaskFlow</span>
+                    </div>
+                    <button id="closeSidebar" class="lg:hidden text-white hover:text-gray-200">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Navigation Menu -->
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <a href="@Url.Action("Index", "Dashboard")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
+                        <i class="fas fa-home text-lg"></i>
+                        <span class="font-medium">Tableau de bord</span>
+                    </a>
+
+                    <a href="@Url.Action("Index", "Projects")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
+                        <i class="fas fa-folder text-lg"></i>
+                        <span class="font-medium">Projets</span>
+                    </a>
+
+                    <a href="@Url.Action("Index", "Issues")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
+                        <i class="fas fa-tasks text-lg"></i>
+                        <span class="font-medium">Tâches</span>
+                    </a>
+
+                    <a href="@Url.Action("Index", "Equipes")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
+                        <i class="fas fa-users text-lg"></i>
+                        <span class="font-medium">Équipe</span>
+                    </a>
+
+                    <a href="@Url.Action("Index", "Calendar")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
+                        <i class="fas fa-calendar text-lg"></i>
+                        <span class="font-medium">Calendrier</span>
+                    </a>
+
+                    <a href="@Url.Action("Index", "Reports")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
+                        <i class="fas fa-chart-bar text-lg"></i>
+                        <span class="font-medium">Rapports</span>
+                    </a>
+
+                    <!-- Divider -->
+                    <div class="border-t border-teal-500 my-4"></div>
+
+                    <a href="@Url.Action("Index", "Settings")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
+                        <i class="fas fa-cog text-lg"></i>
+                        <span class="font-medium">Paramètres</span>
+                    </a>
+                </nav>
+
+                <!-- User Profile -->
+                <div class="p-4 border-t border-teal-500">
+                    <div class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 cursor-pointer transition duration-200">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-teal-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-sm">Utilisateur</p>
+                            <p class="text-xs text-teal-200">user@email.com</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-sm"></i>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col lg:ml-64">
+
+            <!-- Navbar -->
+            <header class="bg-white shadow-md sticky top-0 z-20">
+                <div class="flex items-center justify-between px-6 py-4">
+                    <!-- Left Side -->
+                    <div class="flex items-center space-x-4">
+                        <button id="toggleSidebar" class="lg:hidden text-gray-600 hover:text-teal-600 focus:outline-none">
+                            <i class="fas fa-bars text-2xl"></i>
+                        </button>
+                        <h1 class="text-2xl font-bold text-gray-800">@title</h1>
+                    </div>
+
+                    <!-- Right Side -->
+                    <div class="flex items-center space-x-4">
+                        
+
+                        <!-- Notifications -->
+                        <button class="relative text-gray-600 hover:text-teal-600 transition">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                3
+                            </span>
+                        </button>
+
+                        <!-- Messages -->
+                        <button class="relative text-gray-600 hover:text-teal-600 transition">
+                            <i class="fas fa-envelope text-xl"></i>
+                            <span class="absolute -top-1 -right-1 w-5 h-5 bg-teal-500 text-white text-xs rounded-full flex items-center justify-center">
+                                5
+                            </span>
+                        </button>
+
+                        <!-- Profile Dropdown -->
+                        <div class="relative">
+                            <button id="profileButton" class="flex items-center space-x-2 focus:outline-none">
+                                <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-full flex items-center justify-center">
+                                    <span class="text-white font-semibold">U</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-gray-600 text-sm"></i>
+                            </button>
+
+                            <!-- Dropdown Menu -->
+                            <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2">
+                                <a href="@Url.Action("Profile", "Account")" class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 transition">
+                                    <i class="fas fa-user-circle mr-2 text-teal-600"></i>Mon profil
+                                </a>
+                                <a href="@Url.Action("Index", "Settings")" class="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 transition">
+                                    <i class="fas fa-cog mr-2 text-teal-600"></i>Paramètres
+                                </a>
+                                <div class="border-t border-gray-200 my-1"></div>
+                                <a href="@Url.Action("Logout", "Auth")" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                @RenderBody()
+            </main>
+
+            <!-- Footer -->
+            
+        </div>
+    </div>
+
+    <!-- Overlay pour mobile -->
+    <div id="overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+
+    <script>
+        // Toggle Sidebar
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        toggleSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        });
+
+        // Profile Dropdown
+        const profileButton = document.getElementById('profileButton');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        profileButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', () => {
+            profileDropdown.classList.add('hidden');
+        });
+
+        profileDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    </script>
+</body>
+</html>

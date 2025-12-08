@@ -1,0 +1,94 @@
+﻿@{
+    ViewBag.Title = "Dashboard";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="space-y-6 p-6">
+
+    <!-- Statistiques statiques -->
+    <section aria-labelledby="stats-title">
+        <h2 id="stats-title" class="text-xl font-semibold text-gray-700 mb-4">Statistiques rapides</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="p-5 bg-white rounded-lg shadow flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center text-teal-600">
+                        <i class="fas fa-users text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Utilisateurs</p>
+                        <p class="text-2xl font-bold text-gray-800">10 240</p>
+                    </div>
+                </div>
+                <div class="text-sm text-green-600 font-semibold">+4.2%</div>
+            </div>
+
+            <div class="p-5 bg-white rounded-lg shadow flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
+                        <i class="fas fa-folder-open text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Projets</p>
+                        <p class="text-2xl font-bold text-gray-800">5 120</p>
+                    </div>
+                </div>
+                <div class="text-sm text-green-600 font-semibold">+1.8%</div>
+            </div>
+
+            <div class="p-5 bg-white rounded-lg shadow flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-cyan-50 rounded-lg flex items-center justify-center text-cyan-600">
+                        <i class="fas fa-tasks text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Tâches actives</p>
+                        <p class="text-2xl font-bold text-gray-800">1 342</p>
+                    </div>
+                </div>
+                <div class="text-sm text-amber-600 font-semibold">-0.6%</div>
+            </div>
+
+            <div class="p-5 bg-white rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                            <i class="fas fa-chart-line text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Achèvement</p>
+                            <p class="text-2xl font-bold text-gray-800">76%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div class="h-2 bg-teal-600 rounded-full" style="width:76%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Objectif trimestriel : 80%</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contenu existant -->
+    <section>
+        <h2 class="text-3xl font-bold text-gray-800">Bienvenue sur le tableau de bord</h2>
+
+        <div class="grid md:grid-cols-3 gap-6 mt-6">
+            <div class="p-6 bg-white rounded-lg shadow">
+                <h3 class="font-semibold text-lg">Tâches en cours</h3>
+                <p class="text-sm text-gray-500 mt-2">3 tâches restantes</p>
+            </div>
+            <div class="p-6 bg-white rounded-lg shadow">
+                <h3 class="font-semibold text-lg">Projets</h3>
+                <p class="text-sm text-gray-500 mt-2">5 projets actifs</p>
+            </div>
+            <div class="p-6 bg-white rounded-lg shadow">
+                <h3 class="font-semibold text-lg">Notifications</h3>
+                <p class="text-sm text-gray-500 mt-2">3 nouvelles notifications</p>
+            </div>
+        </div>
+    </section>
+</div>
