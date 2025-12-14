@@ -1,4 +1,18 @@
+using Microsoft.EntityFrameworkCore;
+using ProjetDotNet.Data;
 var builder = WebApplication.CreateBuilder(args);
+
+
+// Connexion MySQL
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("MySqlConnection"),
+        ServerVersion.AutoDetect(
+            builder.Configuration.GetConnectionString("MySqlConnection")
+        )
+    )
+);
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
