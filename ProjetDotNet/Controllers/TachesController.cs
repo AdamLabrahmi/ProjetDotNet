@@ -58,7 +58,22 @@ namespace ProjetDotNet.Controllers
             PopulateSprintsDropDown();
             PopulateUsersDropDown();
             PopulateEnumsDropDowns();
-            var model = new Tache { DateCreation = DateTime.Now };
+
+            // Vérifier si des projets existent
+            if (!((System.Collections.Generic.List<SelectListItem>)ViewBag.Projets).Any())
+            {
+                ModelState.AddModelError(string.Empty, "Aucun projet disponible. Créez un projet d'abord.");
+                return View("~/Views/Taches/Create.cshtml", new Tache());
+            }
+
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+            {
+                // Rediriger vers login si utilisateur non identifié
+                return Challenge();
+            }
+
+            var model = new Tache { DateCreation = DateTime.Now, CreateurID = userId };
             return View("~/Views/Taches/Create.cshtml", model);
         }
 
@@ -67,27 +82,50 @@ namespace ProjetDotNet.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(Tache tache)
         {
+            // 1) Assurer que CreateurID est renseigné AVANT la validation
+            if (tache.CreateurID == 0)
+            {
+                tache.CreateurID = GetCurrentUserId();
+            }
+
+            // Si ModelState contient une ancienne erreur sur CreateurID, la retirer pour re-validation
+            if (ModelState.ContainsKey(nameof(Tache.CreateurID)))
+            {
+                ModelState.Remove(nameof(Tache.CreateurID));
+            }
+
+            // 2) Repeupler les dropdowns pour l'affichage en cas d'erreur
             PopulateProjectsDropDown(tache.ProjectID);
             PopulateSprintsDropDown(tache.SprintID);
             PopulateUsersDropDown(tache.AssigneeID ?? 0);
             PopulateEnumsDropDowns();
 
-            if (!ModelState.IsValid)
-                return View("~/Views/Taches/Create.cshtml", tache);
+            // 3) Vérification explicite : ProjectID est nullable (int?) -> utiliser HasValue
+            if (!tache.ProjectID.HasValue || tache.ProjectID.Value == 0)
+            {
+                ModelState.AddModelError("ProjectID", "Veuillez sélectionner un projet.");
+            }
 
+            // 4) Si encore invalide, logger et retourner la vue (ModelState contient erreurs visibles en vue)
+            if (!ModelState.IsValid)
+            {
+                foreach (var entry in ModelState)
+                {
+                    var field = entry.Key;
+                    foreach (var error in entry.Value.Errors)
+                    {
+                        _logger.LogError("❌ Champ: {Field} | Erreur: {Error}", field, error.ErrorMessage);
+                    }
+                }
+
+                return View("~/Views/Taches/Create.cshtml", tache);
+            }
+
+            // 5) Persist
             tache.DateCreation = DateTime.Now;
 
-            try
-            {
-                _context.Taches.Add(tache);
-                _context.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erreur lors de la création de la tâche");
-                ModelState.AddModelError(string.Empty, "Erreur serveur lors de la sauvegarde.");
-                return View("~/Views/Taches/Create.cshtml", tache);
-            }
+            _context.Taches.Add(tache);
+            _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }
@@ -133,7 +171,8 @@ namespace ProjetDotNet.Controllers
             existing.TempsRestant = updated.TempsRestant;
             existing.DateMiseAJour = DateTime.Now;
             existing.DateResolution = updated.DateResolution;
-            existing.ProjectID = updated.ProjectID;
+            // updated.ProjectID est int? maintenant — préserver si null
+            existing.ProjectID = updated.ProjectID ?? existing.ProjectID;
             existing.SprintID = updated.SprintID;
             existing.AssigneeID = updated.AssigneeID;
 
@@ -187,25 +226,43 @@ namespace ProjetDotNet.Controllers
         // -------- Helpers pour dropdowns ----------
         private void PopulateProjectsDropDown(object selected = null)
         {
+            int? selectedId = null;
+            if (selected is int si) selectedId = si;
+            else if (selected != null && int.TryParse(selected.ToString(), out var parsed)) selectedId = parsed;
+
             ViewBag.Projets = _context.Projets
                 .AsNoTracking()
                 .OrderBy(p => p.Nom)
-                .Select(p => new SelectListItem { Value = p.ProjectID.ToString(), Text = p.Nom })
+                .Select(p => new SelectListItem
+                {
+                    Value = p.ProjectID.ToString(),
+                    Text = p.Nom,
+                    Selected = selectedId.HasValue && selectedId.Value == p.ProjectID
+                })
                 .ToList();
         }
 
         private void PopulateSprintsDropDown(object selected = null)
         {
+            int? selectedId = null;
+            if (selected is int si) selectedId = si;
+            else if (selected != null && int.TryParse(selected.ToString(), out var parsed)) selectedId = parsed;
+
             ViewBag.Sprints = _context.Sprints
                 .AsNoTracking()
                 .OrderBy(s => s.DateDebut)
-                .Select(s => new SelectListItem { Value = s.SprintID.ToString(), Text = s.Nom })
+                .Select(s => new SelectListItem
+                {
+                    Value = s.SprintID.ToString(),
+                    Text = s.Nom,
+                    Selected = selectedId.HasValue && selectedId.Value == s.SprintID
+                })
                 .ToList();
         }
 
+        // Corrigé : accepte un paramètre sélectionné
         private void PopulateUsersDropDown(object selected = null)
         {
-            // selected may be int or string; try to normalize to int for selection comparison
             int? selectedId = null;
             if (selected is int si) selectedId = si;
             else if (selected != null && int.TryParse(selected.ToString(), out var parsed)) selectedId = parsed;
@@ -215,12 +272,13 @@ namespace ProjetDotNet.Controllers
                 .OrderBy(u => u.Nom)
                 .Select(u => new SelectListItem
                 {
-                    Value = u.UserID.ToString(), // corrected: Utilisateur.UserID is the actual PK
+                    Value = u.UserID.ToString(),
                     Text = string.IsNullOrWhiteSpace(u.Nom) ? u.Email : u.Nom,
                     Selected = selectedId.HasValue && selectedId.Value == u.UserID
                 })
                 .ToList();
         }
+
 
         private void PopulateEnumsDropDowns(StatutTache? selectedStatut = null, TypeTache? selectedType = null, PrioriteTache? selectedPriorite = null)
         {
@@ -238,6 +296,28 @@ namespace ProjetDotNet.Controllers
                                    .Cast<PrioriteTache>()
                                    .Select(p => new SelectListItem { Value = p.ToString(), Text = p.ToString(), Selected = (selectedPriorite.HasValue && selectedPriorite.Value == p) })
                                    .ToList();
+        }
+
+        // -------- Helper pour récupérer l'ID utilisateur connecté ----------
+        private int GetCurrentUserId()
+        {
+            // 1) Essayer NameIdentifier (ID numérique direct)
+            var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(idClaim) && int.TryParse(idClaim, out var idFromClaim))
+                return idFromClaim;
+
+            // 2) Fallback sur email
+            var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? User.Identity?.Name;
+            if (!string.IsNullOrEmpty(email))
+            {
+                var user = _context.Utilisateurs.AsNoTracking().FirstOrDefault(u => u.Email == email);
+                if (user != null)
+                    return user.UserID;
+            }
+
+            // 3) Si rien, log et retourne 0
+            _logger.LogWarning("Impossible de récupérer l'ID utilisateur. Claims: {@Claims}", User.Claims.Select(c => new { c.Type, c.Value }));
+            return 0;
         }
     }
 }

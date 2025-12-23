@@ -9,6 +9,8 @@
     <h1 class="text-2xl font-bold mb-4">Créer une tâche</h1>
 
     <form asp-action="Create" method="post" class="bg-white p-6 rounded-xl shadow">
+        <div asp-validation-summary="All" class="text-red-600 font-bold"></div>
+
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="text-sm text-red-600 mb-4"></div>
 
@@ -29,7 +31,6 @@
                 <label asp-for="Type" class="block text-sm font-medium text-gray-700">Type</label>
                 <select asp-for="Type" class="mt-1 block w-full border rounded px-3 py-2"
                         asp-items="ViewBag.Types">
-                    <option value="">-- Sélectionner --</option>
                 </select>
                 <span asp-validation-for="Type" class="text-sm text-red-600"></span>
             </div>
@@ -38,7 +39,6 @@
                 <label asp-for="Priorite" class="block text-sm font-medium text-gray-700">Priorité</label>
                 <select asp-for="Priorite" class="mt-1 block w-full border rounded px-3 py-2"
                         asp-items="ViewBag.Priorites">
-                    <option value="">-- Sélectionner --</option>
                 </select>
                 <span asp-validation-for="Priorite" class="text-sm text-red-600"></span>
             </div>
@@ -47,7 +47,6 @@
                 <label asp-for="Statut" class="block text-sm font-medium text-gray-700">Statut</label>
                 <select asp-for="Statut" class="mt-1 block w-full border rounded px-3 py-2"
                         asp-items="ViewBag.Statuts">
-                    <option value="">-- Sélectionner --</option>
                 </select>
                 <span asp-validation-for="Statut" class="text-sm text-red-600"></span>
             </div>
@@ -67,12 +66,19 @@
             </div>
 
             <div>
-                <label asp-for="ProjectID" class="block text-sm font-medium text-gray-700">Projet</label>
-                <select asp-for="ProjectID" asp-items="ViewBag.Projets" class="mt-1 block w-full border rounded px-3 py-2">
-                    <option value="">-- Aucun --</option>
+                <label asp-for="ProjectID" class="block text-sm font-medium text-gray-700">
+                    Projet
+                </label>
+
+                <select asp-for="ProjectID"
+                        asp-items="ViewBag.Projets"
+                        class="mt-1 block w-full border rounded px-3 py-2">
+                    <option value="">-- Choisir un projet --</option>
                 </select>
+
                 <span asp-validation-for="ProjectID" class="text-sm text-red-600"></span>
             </div>
+
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -93,13 +99,8 @@
             </div>
         </div>
 
-        <div class="mb-4">
-            <label asp-for="CreateurID" class="block text-sm font-medium text-gray-700">Créateur</label>
-            <select asp-for="CreateurID" asp-items="ViewBag.Utilisateurs" class="mt-1 block w-full border rounded px-3 py-2">
-                <option value="">-- Sélectionner --</option>
-            </select>
-            <span asp-validation-for="CreateurID" class="text-sm text-red-600"></span>
-        </div>
+        <!-- CreateurID rendu hidden et pré-rempli dans le contrôleur -->
+        <input asp-for="CreateurID" type="hidden" />
 
         <input asp-for="DateCreation" type="hidden" value="@DateTime.Now.ToString("o")" />
 

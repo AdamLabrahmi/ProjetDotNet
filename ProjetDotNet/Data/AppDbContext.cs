@@ -93,20 +93,51 @@ namespace ProjetDotNet.Data
             });
 
             // Tache enums
-            modelBuilder.Entity<Tache>(builder =>
+            //modelBuilder.Entity<Tache>(builder =>
+            //{
+            //    builder.Property(t => t.Type)
+            //            .HasConversion<string>()
+            //            .HasMaxLength(50);
+
+            //    builder.Property(t => t.Priorite)
+            //           .HasConversion<string>()
+            //           .HasMaxLength(50);
+
+            //    builder.Property(t => t.Statut)
+            //           .HasConversion<string>()
+            //           .HasMaxLength(50);
+            //});
+
+            // Remplacer les mappings Tache par ce bloc unique et exact
+            modelBuilder.Entity<Tache>(entity =>
             {
-                builder.Property(t => t.Type)
-                        .HasConversion<string>()
-                        .HasMaxLength(50);
+                entity.ToTable("tache");
+                entity.HasKey(e => e.TacheID);
 
-                builder.Property(t => t.Priorite)
-                       .HasConversion<string>()
-                       .HasMaxLength(50);
+                // noms EXACTS des colonnes en base (adapter si besoin)
+                entity.Property(e => e.TacheID).HasColumnName("tacheID");
+                entity.Property(e => e.ProjectID).HasColumnName("projectID");
+                entity.Property(e => e.SprintID).HasColumnName("sprintID");
+                entity.Property(e => e.AssigneeID).HasColumnName("assigneeID");
+                entity.Property(e => e.CreateurID).HasColumnName("createurID");
 
-                builder.Property(t => t.Statut)
-                       .HasConversion<string>()
-                       .HasMaxLength(50);
+                entity.Property(e => e.Titre).HasColumnName("titre");
+                entity.Property(e => e.Description).HasColumnName("description");
+
+                // enums stockés en string
+                entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(50).HasColumnName("type");
+                entity.Property(e => e.Priorite).HasConversion<string>().HasMaxLength(50).HasColumnName("priorite");
+                entity.Property(e => e.Statut).HasConversion<string>().HasMaxLength(50).HasColumnName("statut");
+
+                // colonnes spécifiques
+                entity.Property(e => e.EstimationDur).HasColumnName("estimation_dur");
+                entity.Property(e => e.TempsRestant).HasColumnName("tempsRestant");
+
+                entity.Property(e => e.DateCreation).HasColumnName("dateCreation");
+                entity.Property(e => e.DateMiseAJour).HasColumnName("dateMiseAJour");
+                entity.Property(e => e.DateResolution).HasColumnName("dateResolution");
             });
+
 
             // MembreProjet.Role (RoleProjet)
             modelBuilder.Entity<MembreProjet>(builder =>

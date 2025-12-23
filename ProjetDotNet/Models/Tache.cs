@@ -41,11 +41,11 @@ namespace ProjetDotNet.Models
         // ========================
 
         // 🔗 Projet (obligatoire)
-        [Required]
-        public int ProjectID { get; set; }
+        [Required(ErrorMessage = "Veuillez sélectionner un projet")]
+        public int? ProjectID { get; set; }
 
         [ForeignKey("ProjectID")]
-        public Projet Projet { get; set; } = null!;
+        public Projet? Projet { get; set; }
 
         // 🔗 Sprint (optionnel)
         public int? SprintID { get; set; }
@@ -64,7 +64,7 @@ namespace ProjetDotNet.Models
         public int CreateurID { get; set; }
 
         [ForeignKey("CreateurID")]
-        public Utilisateur Createur { get; set; } = null!;
+        public Utilisateur? Createur { get; set; }
 
         // ========================
         // Collections

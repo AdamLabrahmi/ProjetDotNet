@@ -16,6 +16,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     )
 );
 
+
 // Cookie authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
