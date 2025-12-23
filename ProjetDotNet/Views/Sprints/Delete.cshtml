@@ -1,0 +1,31 @@
+﻿@model ProjetDotNet.Models.Sprint
+@{
+    ViewBag.Title = "Supprimer le sprint";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="max-w-md mx-auto">
+    <h1 class="text-2xl font-bold mb-4 text-red-600">Supprimer le sprint</h1>
+
+    <div class="bg-white p-6 rounded-xl shadow mb-4">
+        <p class="font-semibold">Nom</p>
+        <p class="mb-3">@Model.Nom</p>
+
+        <p class="font-semibold">Projet</p>
+        <p class="mb-3">@Model.Projet?.Nom ?? "—"</p>
+
+        <p class="font-semibold">Période</p>
+        <p class="mb-3">@Model.DateDebut.ToString("dd MMMM yyyy") — @Model.DateFin.ToString("dd MMMM yyyy")</p>
+
+        <p class="text-gray-600">Confirmez-vous la suppression de ce sprint ? Cette action est irréversible.</p>
+    </div>
+
+    <form asp-action="Delete" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="SprintID" />
+        <div class="flex justify-end space-x-2">
+            <a asp-action="Index" class="px-4 py-2 rounded border">Annuler</a>
+            <button type="submit" class="px-4 py-2 rounded bg-red-600 text-white">Supprimer</button>
+        </div>
+    </form>
+</div>

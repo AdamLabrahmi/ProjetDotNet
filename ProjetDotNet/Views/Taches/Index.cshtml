@@ -1,0 +1,62 @@
+﻿@model IEnumerable<ProjetDotNet.Models.Tache>
+@using ProjetDotNet.Models.Enums
+@{
+    ViewBag.Title = "Tâches";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold">Tâches</h1>
+            <p class="text-gray-600">Liste des tâches</p>
+        </div>
+        <a asp-action="Create" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700">Nouvelle tâche</a>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Titre</th>
+                            <th class="px-4 py-3 text-left">Projet</th>
+                            <th class="px-4 py-3 text-left">Sprint</th>
+                            <th class="px-4 py-3 text-left">Assigné</th>
+                            <th class="px-4 py-3 text-left">Statut</th>
+                            <th class="px-4 py-3 text-left">Priorité</th>
+                            <th class="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        @foreach (var t in Model)
+                        {
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3">@t.Titre</td>
+                                <td class="px-4 py-3">@t.Projet?.Nom ?? "—"</td>
+                                <td class="px-4 py-3">@t.Sprint?.Nom ?? "—"</td>
+                                <td class="px-4 py-3">@t.Assignee?.Nom ?? "—"</td>
+                                <td class="px-4 py-3">@t.Statut</td>
+                                <td class="px-4 py-3">@t.Priorite</td>
+                                <td class="px-4 py-3 text-right">
+                                    <a asp-action="Details" asp-route-id="@t.TacheID" class="text-gray-600 hover:text-teal-600 mr-2">Voir</a>
+                                    <a asp-action="Edit" asp-route-id="@t.TacheID" class="text-teal-600 hover:text-teal-700 mr-2">Modifier</a>
+                                    <a asp-action="Delete" asp-route-id="@t.TacheID" class="text-red-600 hover:text-red-700">Supprimer</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bg-white rounded-xl p-8 text-center shadow">
+            <p class="text-gray-600">Aucune tâche trouvée.</p>
+            <a asp-action="Create" class="mt-4 inline-block bg-teal-600 text-white px-4 py-2 rounded-lg">Créer une tâche</a>
+        </div>
+    }
+</div>

@@ -1,10 +1,12 @@
 ﻿using ProjetDotNet.Models.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProjetDotNet.Models
 {
     public class MembreEquipe
     {
-       
+        [Key]
+        public int MembreEquipeID { get; set; }
         public int UserID { get; set; }
         public int TeamID { get; set; }
 

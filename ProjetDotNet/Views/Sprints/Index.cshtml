@@ -1,0 +1,80 @@
+﻿@model IEnumerable<ProjetDotNet.Models.Sprint>
+@using ProjetDotNet.Models.Enums
+@{
+    ViewBag.Title = "Sprints";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold">Sprints</h1>
+            <p class="text-gray-600">Liste des sprints</p>
+        </div>
+        <a asp-action="Create" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700">Nouveau sprint</a>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Nom</th>
+                            <th class="px-4 py-3 text-left">Projet</th>
+                            <th class="px-4 py-3 text-left">Période</th>
+                            <th class="px-4 py-3 text-left">Statut</th>
+                            <th class="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        @foreach (var s in Model)
+                        {
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3">@s.Nom</td>
+                                <td class="px-4 py-3">@s.Projet?.Nom ?? "—"</td>
+                                <td class="px-4 py-3">
+                                    @s.DateDebut.ToString("dd/MM/yyyy") — @s.DateFin.ToString("dd/MM/yyyy")
+                                </td>
+                                <td class="px-4 py-3">
+                                    @switch (s.Statut)
+                                    {
+                                        case StatutSprint.PLANIFIE:
+                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Planifié</span>
+                                            ;
+                                            break;
+                                        case StatutSprint.EN_COURS:
+                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">En cours</span>
+                                            ;
+                                            break;
+                                        case StatutSprint.TERMINE:
+                                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Terminé</span>
+                                            ;
+                                            break;
+                                        default:
+                                            <span class="text-sm">@s.Statut</span>
+                                            ;
+                                            break;
+                                    }
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <a asp-action="Details" asp-route-id="@s.SprintID" class="text-gray-600 hover:text-teal-600 mr-2">Voir</a>
+                                    <a asp-action="Edit" asp-route-id="@s.SprintID" class="text-teal-600 hover:text-teal-700 mr-2">Modifier</a>
+                                    <a asp-action="Delete" asp-route-id="@s.SprintID" class="text-red-600 hover:text-red-700">Supprimer</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bg-white rounded-xl p-8 text-center shadow">
+            <p class="text-gray-600">Aucun sprint trouvé.</p>
+            <a asp-action="Create" class="mt-4 inline-block bg-teal-600 text-white px-4 py-2 rounded-lg">Créer un sprint</a>
+        </div>
+    }
+</div>

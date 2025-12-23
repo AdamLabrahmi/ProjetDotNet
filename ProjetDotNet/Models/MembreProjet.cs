@@ -1,8 +1,11 @@
 ﻿using ProjetDotNet.Models.Enums;
+using System.ComponentModel.DataAnnotations;
 namespace ProjetDotNet.Models
 {
     public class MembreProjet
     {
+        [Key]
+        public int MembreProjetID { get; set; }
         // clé composite configurée dans DbContext
         public int UserID { get; set; }
         public int ProjectID { get; set; }

@@ -1,0 +1,284 @@
+﻿@model ProjetDotNet.Models.ViewModels.ProfileViewModel
+@{
+    ViewBag.Title = "Mon profil";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<!-- Header avec bannière -->
+<div class="mb-6">
+    <div class="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-2xl h-48 relative overflow-hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-6">
+            <div class="flex items-end space-x-6">
+                <!-- Avatar -->
+                <div class="relative group">
+                    <div class="w-32 h-32 bg-white rounded-2xl shadow-xl flex items-center justify-center border-4 border-white">
+                        @if (!string.IsNullOrEmpty(Model.Avatar))
+                        {
+                            <img src="@Model.Avatar" alt="Avatar" class="w-full h-full rounded-2xl object-cover" />
+                        }
+                        else
+                        {
+                            <span class="text-5xl font-bold text-teal-600">
+                                @(!string.IsNullOrEmpty(Model.Nom) ? Model.Nom.Substring(0, 1).ToUpper() : "U")
+                            </span>
+                        }
+                    </div>
+                    <!-- Bouton upload avatar -->
+                    <button class="absolute bottom-0 right-0 w-10 h-10 bg-teal-600 text-white rounded-full shadow-lg hover:bg-teal-700 transition flex items-center justify-center">
+                        <i class="fas fa-camera text-sm"></i>
+                    </button>
+                </div>
+                <!-- Infos rapides -->
+                <div class="flex-1 pb-4">
+                    <h1 class="text-3xl font-bold text-white mb-1">@Model.Nom</h1>
+                    <p class="text-teal-100 flex items-center">
+                        <i class="fas fa-envelope mr-2"></i>@Model.Email
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenu principal -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Colonne gauche - Informations principales -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <!-- Carte Informations personnelles -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-user-circle text-teal-600 mr-3"></i>
+                    Informations personnelles
+                </h2>
+                <a href="@Url.Action("Edit")"
+                   class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition shadow-md flex items-center">
+                    <i class="fas fa-edit mr-2"></i>Modifier
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Nom complet -->
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Nom complet</label>
+                    <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                        <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-user text-teal-600"></i>
+                        </div>
+                        <p class="text-gray-800 font-medium">@Model.Nom</p>
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+                    <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-envelope text-emerald-600"></i>
+                        </div>
+                        <p class="text-gray-800 font-medium">@Model.Email</p>
+                    </div>
+                </div>
+
+                <!-- Téléphone -->
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Téléphone</label>
+                    <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                        <div class="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-phone text-cyan-600"></i>
+                        </div>
+                        <p class="text-gray-800 font-medium">
+                            @(!string.IsNullOrEmpty(Model.Telephone) ? Model.Telephone : "Non renseigné")
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Date d'inscription -->
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Membre depuis</label>
+                    <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-calendar text-amber-600"></i>
+                        </div>
+                        @* <p class="text-gray-800 font-medium">
+                            @(Model.DateInscription?.ToString("dd MMMM yyyy") ?? "Non disponible")
+                        </p> *@
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte Activité récente -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-chart-line text-teal-600 mr-3"></i>
+                Activité récente
+            </h2>
+
+            <div class="space-y-4">
+                <!-- Activité 1 -->
+                <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-check-circle text-teal-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">Tâche terminée</p>
+                        <p class="text-sm text-gray-500">Design de l'interface utilisateur</p>
+                    </div>
+                    <span class="text-xs text-gray-400">Il y a 2h</span>
+                </div>
+
+                <!-- Activité 2 -->
+                <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-comment text-emerald-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">Nouveau commentaire</p>
+                        <p class="text-sm text-gray-500">Sur le projet Application Mobile</p>
+                    </div>
+                    <span class="text-xs text-gray-400">Il y a 5h</span>
+                </div>
+
+                <!-- Activité 3 -->
+                <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                    <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-folder-plus text-cyan-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">Nouveau projet créé</p>
+                        <p class="text-sm text-gray-500">Site Web E-commerce</p>
+                    </div>
+                    <span class="text-xs text-gray-400">Hier</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Colonne droite - Statistiques et actions -->
+    <div class="space-y-6">
+
+        <!-- Carte Statistiques -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-chart-pie text-teal-600 mr-2"></i>
+                Mes statistiques
+            </h2>
+
+            <div class="space-y-4">
+                <!-- Projets -->
+                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-teal-50 to-teal-100 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-teal-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-folder text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Projets</p>
+                            <p class="text-2xl font-bold text-gray-800">12</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-up text-teal-600"></i>
+                </div>
+
+                <!-- Tâches -->
+                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tasks text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Tâches</p>
+                            <p class="text-2xl font-bold text-gray-800">48</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-up text-emerald-600"></i>
+                </div>
+
+                <!-- Équipes -->
+                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-cyan-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Équipes</p>
+                            <p class="text-2xl font-bold text-gray-800">5</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-arrow-right text-cyan-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte Actions rapides -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Actions rapides</h2>
+
+            <div class="space-y-3">
+                <button class="w-full flex items-center space-x-3 p-3 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition">
+                    <i class="fas fa-key"></i>
+                    <span class="font-medium">Changer le mot de passe</span>
+                </button>
+
+                <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+                    <i class="fas fa-bell"></i>
+                    <span class="font-medium">Notifications</span>
+                </button>
+
+                <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+                    <i class="fas fa-shield-alt"></i>
+                    <span class="font-medium">Sécurité</span>
+                </button>
+
+                <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+                    <i class="fas fa-download"></i>
+                    <span class="font-medium">Télécharger mes données</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Carte Badge -->
+        <div class="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between mb-4">
+                <i class="fas fa-trophy text-4xl"></i>
+                <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-sm font-semibold">
+                    Niveau 5
+                </span>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Super Contributeur</h3>
+            <p class="text-sm opacity-90">Vous avez terminé 50 tâches ce mois-ci ! Continuez comme ça ! 🎉</p>
+            <div class="mt-4 bg-white bg-opacity-20 rounded-full h-2">
+                <div class="bg-white h-2 rounded-full" style="width: 75%"></div>
+            </div>
+            <p class="text-xs mt-2 opacity-75">75% vers le niveau suivant</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Upload Avatar (optionnel) -->
+<div id="avatarModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+        <h3 class="text-2xl font-bold mb-4">Changer l'avatar</h3>
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+            <p class="text-gray-600 mb-2">Glissez une image ou cliquez pour parcourir</p>
+            <input type="file" accept="image/*" class="hidden" id="avatarInput" />
+            <button onclick="document.getElementById('avatarInput').click()"
+                    class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition mt-4">
+                Choisir une image
+            </button>
+        </div>
+        <div class="flex space-x-3 mt-6">
+            <button onclick="document.getElementById('avatarModal').classList.add('hidden')"
+                    class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
+                Annuler
+            </button>
+            <button class="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 transition">
+                Enregistrer
+            </button>
+        </div>
+    </div>
+</div>

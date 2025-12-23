@@ -1,0 +1,77 @@
+﻿@model ProjetDotNet.Models.Sprint
+@using ProjetDotNet.Models.Enums
+@{
+    ViewBag.Title = "Modifier le sprint";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Modifier le sprint</h1>
+
+    <form asp-action="Edit" method="post" class="bg-white p-6 rounded-xl shadow">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="SprintID" />
+
+        <div class="grid grid-cols-1 gap-4">
+            <div>
+                <label asp-for="Nom" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="Nom" class="mt-1 block w-full border rounded px-3 py-2" />
+                <span asp-validation-for="Nom" class="text-sm text-red-600"></span>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Projet (optionnel)</label>
+                @if (ViewBag.Projets != null)
+                {
+                    <select asp-for="ProjectID" class="mt-1 block w-full border rounded px-3 py-2" asp-items="ViewBag.Projets">
+                        <option value="">-- Sélectionner --</option>
+                    </select>
+                }
+                else
+                {
+                    <input asp-for="ProjectID" type="hidden" />
+                    <p class="text-sm text-gray-500">Aucun projet disponible</p>
+                }
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label asp-for="DateDebut" class="block text-sm font-medium text-gray-700">Date de début</label>
+                    <input asp-for="DateDebut" type="date" class="mt-1 block w-full border rounded px-3 py-2" />
+                    <span asp-validation-for="DateDebut" class="text-sm text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="DateFin" class="block text-sm font-medium text-gray-700">Date de fin</label>
+                    <input asp-for="DateFin" type="date" class="mt-1 block w-full border rounded px-3 py-2" />
+                    <span asp-validation-for="DateFin" class="text-sm text-red-600"></span>
+                </div>
+            </div>
+
+            <div>
+                <label asp-for="Statut" class="block text-sm font-medium text-gray-700">Statut</label>
+                <select asp-for="Statut" class="mt-1 block w-full border rounded px-3 py-2">
+                    @foreach (var s in Enum.GetValues(typeof(StatutSprint)).Cast<StatutSprint>())
+                    {
+                        <option value="@s" selected="@(Model.Statut == s ? "selected" : null)">@s</option>
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label asp-for="Objectif" class="block text-sm font-medium text-gray-700">Objectif</label>
+                <textarea asp-for="Objectif" class="mt-1 block w-full border rounded px-3 py-2" rows="4"></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2">
+                <a asp-action="Index" class="px-4 py-2 rounded border">Annuler</a>
+                <button type="submit" class="px-4 py-2 rounded bg-teal-600 text-white">Enregistrer</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

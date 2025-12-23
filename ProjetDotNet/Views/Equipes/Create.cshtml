@@ -1,0 +1,162 @@
+﻿@model ProjetDotNet.Models.Equipe
+@{
+    ViewBag.Title = "Créer une équipe";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var organisations = ViewBag.Organisations as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+}
+
+<!-- En-tête -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Créer une équipe</h2>
+    <p class="text-gray-600">Créez une nouvelle équipe pour votre organisation</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Formulaire principal (2/3) -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form asp-controller="Equipes" asp-action="Create" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
+
+                @* Bloc résumé de validation - Affiché uniquement s'il y a des erreurs *@
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <h3 class="text-red-800 font-semibold mb-2">Erreurs de validation</h3>
+                                <div asp-validation-summary="All" class="text-red-700 text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Organisation -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-building text-teal-600 mr-2"></i>
+                        Organisation <span class="text-red-500">*</span>
+                    </label>
+                    <select asp-for="OrgID"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"
+                            asp-items="organisations">
+                        <option value="">-- Choisir une organisation --</option>
+                    </select>
+                    <span asp-validation-for="OrgID" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Nom -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-users text-teal-600 mr-2"></i>
+                        Nom de l'équipe <span class="text-red-500">*</span>
+                    </label>
+                    <input asp-for="Nom"
+                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"
+                           placeholder="Ex: Équipe développement" />
+                    <span asp-validation-for="Nom" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-align-left text-teal-600 mr-2"></i>
+                        Description
+                    </label>
+                    <textarea asp-for="Description"
+                              rows="4"
+                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200 resize-none"
+                              placeholder="Description de l'équipe (optionnel)"></textarea>
+                    <span asp-validation-for="Description" class="text-red-500 text-sm mt-1 block"></span>
+                    <p class="text-gray-500 text-xs mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Décrivez le rôle et les responsabilités de cette équipe
+                    </p>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
+                    <button type="submit"
+                            class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center space-x-2">
+                        <i class="fas fa-check"></i>
+                        <span>Créer l'équipe</span>
+                    </button>
+                    <a asp-action="Index" asp-route-orgId="@Model.OrgID"
+                       class="bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Annuler</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Colonne droite - Aide (1/3) -->
+    <div class="space-y-6">
+
+        <!-- Carte d'aide -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-lightbulb text-teal-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Conseils</h3>
+            </div>
+            <ul class="space-y-3 text-sm text-gray-600">
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Choisissez un nom qui reflète clairement le rôle de l'équipe</span>
+                </li>
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Une description détaillée aide les nouveaux membres à comprendre leurs responsabilités</span>
+                </li>
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Vous pourrez ajouter des membres après la création</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Carte exemples -->
+        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-star text-white text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Exemples</h3>
+            </div>
+            <div class="space-y-3">
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                    <p class="font-semibold text-gray-800 text-sm">Équipe Frontend</p>
+                    <p class="text-xs text-gray-600 mt-1">Développement des interfaces utilisateurs</p>
+                </div>
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                    <p class="font-semibold text-gray-800 text-sm">Équipe Backend</p>
+                    <p class="text-xs text-gray-600 mt-1">Développement des API et services</p>
+                </div>
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                    <p class="font-semibold text-gray-800 text-sm">Équipe QA</p>
+                    <p class="text-xs text-gray-600 mt-1">Tests et assurance qualité</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte informations -->
+        <div class="bg-blue-50 rounded-xl shadow-lg p-6 border border-blue-200">
+            <div class="flex items-center space-x-3 mb-3">
+                <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                <h3 class="font-bold text-gray-800">À savoir</h3>
+            </div>
+            <p class="text-sm text-gray-700">
+                Une fois créée, vous pourrez inviter des membres, assigner des projets et définir des permissions spécifiques pour cette équipe.
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

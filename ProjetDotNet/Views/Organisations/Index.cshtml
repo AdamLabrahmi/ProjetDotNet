@@ -1,0 +1,169 @@
+﻿@{
+    ViewBag.Title = "Organisations";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+@model IEnumerable<ProjetDotNet.Models.Organisations>
+
+<!-- En-tête avec bouton d'action -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Organisations</h1>
+        <p class="text-gray-600">Gérez vos organisations et leurs paramètres</p>
+    </div>
+    <a href="@Url.Action("Create")"
+       class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg flex items-center space-x-2">
+        <i class="fas fa-plus"></i>
+        <span class="font-semibold">Nouvelle organisation</span>
+    </a>
+</div>
+
+<!-- Statistiques rapides -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-teal-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">Total organisations</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@Model.Count()</h3>
+            </div>
+            <div class="w-14 h-14 bg-teal-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-building text-teal-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-emerald-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">Actives</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@Model.Count()</h3>
+            </div>
+            <div class="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-check-circle text-emerald-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-cyan-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">Membres totaux</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">-</h3>
+            </div>
+            <div class="w-14 h-14 bg-cyan-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-users text-cyan-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Barre de recherche et filtres -->
+<div class="bg-white rounded-xl shadow-md p-4 mb-6">
+    <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text"
+                       placeholder="Rechercher une organisation..."
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" />
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2">
+                <i class="fas fa-filter text-gray-600"></i>
+                <span class="text-gray-700">Filtrer</span>
+            </button>
+            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2">
+                <i class="fas fa-sort text-gray-600"></i>
+                <span class="text-gray-700">Trier</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <!-- Liste des organisations en grille -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @foreach (var org in Model)
+        {
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden group">
+                <!-- En-tête coloré -->
+                <div class="h-24 bg-gradient-to-r from-teal-500 to-emerald-500 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-black bg-opacity-10"></div>
+                    <div class="absolute top-4 right-4">
+                        <div class="w-12 h-12 bg-white rounded-lg shadow-lg flex items-center justify-center">
+                            <i class="fas fa-building text-teal-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenu -->
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-teal-600 transition">
+                        @org.Nom
+                    </h3>
+
+                    @if (!string.IsNullOrEmpty(org.Description))
+                    {
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                            @org.Description
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="text-gray-400 text-sm italic mb-4">Aucune description</p>
+                    }
+
+                    <!-- Informations supplémentaires -->
+                    <div class="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+                        <div class="flex items-center space-x-1">
+                            <i class="fas fa-users text-teal-600"></i>
+                            <span>0 membres</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <i class="fas fa-project-diagram text-emerald-600"></i>
+                            <span>0 projets</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center space-x-2 pt-4 border-t border-gray-200">
+                        <a href="@Url.Action("Details", new { id = org.OrgID })"
+                           class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition text-center font-medium">
+                            <i class="fas fa-eye mr-1"></i>Détails
+                        </a>
+                        <a href="@Url.Action("Edit", new { id = org.OrgID })"
+                           class="flex-1 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition text-center font-medium">
+                            <i class="fas fa-edit mr-1"></i>Modifier
+                        </a>
+                        @* <a href="@Url.Action("Delete", new { id = org.OrgID })"
+                           class="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette organisation ?')">
+                            <i class="fas fa-trash"></i>
+                        </a> *@
+                        <a href="@Url.Action("Delete", new { id = org.OrgID })"
+                           class="bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <!-- État vide -->
+    <div class="bg-white rounded-xl shadow-md p-12 text-center">
+        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-building text-gray-400 text-4xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Aucune organisation</h3>
+        <p class="text-gray-600 mb-6">Commencez par créer votre première organisation</p>
+        <a href="@Url.Action("Create")"
+           class="inline-flex items-center space-x-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-8 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg">
+            <i class="fas fa-plus"></i>
+            <span class="font-semibold">Créer une organisation</span>
+        </a>
+    </div>
+}

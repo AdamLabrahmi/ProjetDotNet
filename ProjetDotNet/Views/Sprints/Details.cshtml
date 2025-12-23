@@ -1,0 +1,56 @@
+﻿@model ProjetDotNet.Models.Sprint
+@using ProjetDotNet.Models.Enums
+@{
+    ViewBag.Title = "Détails du sprint";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">@Model.Nom</h1>
+            <p class="text-sm text-gray-500">@Model.Projet?.Nom ?? "Projet non assigné"</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a asp-action="Edit" asp-route-id="@Model.SprintID" class="bg-white border px-4 py-2 rounded hover:bg-gray-50">Modifier</a>
+            <a asp-action="Index" class="bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">Retour</a>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-sm text-gray-500 uppercase">Période</h3>
+                <p class="mt-2">@Model.DateDebut.ToString("dd MMMM yyyy") — @Model.DateFin.ToString("dd MMMM yyyy")</p>
+            </div>
+            <div>
+                <h3 class="text-sm text-gray-500 uppercase">Statut</h3>
+                <p class="mt-2">
+                    @switch (Model.Statut)
+                    {
+                        case StatutSprint.PLANIFIE:
+                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">Planifié</span>
+                            ;
+                            break;
+                        case StatutSprint.EN_COURS:
+                            <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">En cours</span>
+                            ;
+                            break;
+                        case StatutSprint.TERMINE:
+                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full">Terminé</span>
+                            ;
+                            break;
+                        default:
+                            <span>@Model.Statut</span>
+                            ;
+                            break;
+                    }
+                </p>
+            </div>
+            <div class="md:col-span-2">
+                <h3 class="text-sm text-gray-500 uppercase">Objectif</h3>
+                <p class="mt-2 text-gray-700">@(!string.IsNullOrEmpty(Model.Objectif) ? Model.Objectif : "Aucun objectif défini")</p>
+            </div>
+        </div>
+    </div>
+</div>

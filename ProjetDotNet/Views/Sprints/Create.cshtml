@@ -1,0 +1,75 @@
+﻿@model ProjetDotNet.Models.Sprint
+@using ProjetDotNet.Models.Enums
+
+@{
+    ViewBag.Title = "Créer un sprint";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Créer un sprint</h1>
+
+    <form asp-action="Create" method="post" class="bg-white p-6 rounded-xl shadow">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="All" class="text-red-600 mb-4"></div>
+
+        <!-- Nom -->
+        <div class="mb-4">
+            <label asp-for="Nom"></label>
+            <input asp-for="Nom" class="w-full border p-2 rounded" />
+            <span asp-validation-for="Nom" class="text-red-600"></span>
+        </div>
+
+        <!-- Projet obligatoire -->
+        <div class="mb-4">
+            <label>Projet <span class="text-red-500">*</span></label>
+   
+            <!-- si Project obligatoire : NE PAS fournir d'option value="" -->
+            <select asp-for="ProjectID" asp-items="ViewBag.Projets"
+                    class="mt-1 block w-full border rounded px-3 py-2">
+            </select>
+            <span asp-validation-for="ProjectID" class="text-red-600"></span>
+        </div>
+
+        <!-- Dates -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label asp-for="DateDebut"></label>
+                <input asp-for="DateDebut" type="date" class="w-full border p-2 rounded" />
+            </div>
+            <div>
+                <label asp-for="DateFin"></label>
+                <input asp-for="DateFin" type="date" class="w-full border p-2 rounded" />
+            </div>
+        </div>
+
+        <!-- Statut -->
+        <div class="mb-4">
+            <label asp-for="Statut"></label>
+            <select asp-for="Statut" class="w-full border p-2 rounded">
+                @foreach (var s in Enum.GetValues(typeof(StatutSprint)).Cast<StatutSprint>())
+                {
+                    <option value="@s">@s</option>
+                }
+            </select>
+        </div>
+
+        <!-- Objectif -->
+        <div class="mb-4">
+            <label asp-for="Objectif"></label>
+            <textarea asp-for="Objectif" class="w-full border p-2 rounded"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2">
+            <a asp-action="Index" class="px-4 py-2 border rounded">Annuler</a>
+            <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded">
+                Créer
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -2,7 +2,7 @@
 
 namespace ProjetDotNet.Controllers
 {
-    public class IssuesController : Controller
+    public class UserController : Controller
     {
         public IActionResult Index()
         {
