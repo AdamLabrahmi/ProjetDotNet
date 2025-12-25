@@ -1,0 +1,121 @@
+﻿@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    ViewBag.Title = "Ajouter un membre au projet";
+    int projectId = ViewBag.ProjectId != null ? (int)ViewBag.ProjectId : 0;
+}
+
+<form id="antiForgeryForm">@Html.AntiForgeryToken()</form>
+
+<div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-semibold mb-4">Ajouter un membre</h2>
+    <p class="text-sm text-gray-600 mb-4">Rechercher un utilisateur par nom ou email puis cliquez pour l'ajouter au projet.</p>
+
+    <div class="flex items-center gap-2 mb-4">
+        <input id="userSearch" type="text" placeholder="Rechercher nom ou email..."
+               class="flex-1 px-4 py-2 border rounded-lg focus:outline-none" />
+        <button id="searchBtn" type="button" class="px-4 py-2 bg-teal-600 text-white rounded-lg">Rechercher</button>
+    </div>
+
+    <div id="searchResults" class="space-y-2"></div>
+
+    <div class="mt-6">
+        <a asp-controller="Projects" asp-action="Details" asp-route-id="@projectId"
+           class="inline-block px-4 py-2 border rounded text-gray-700 hover:bg-gray-50">Retour au projet</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function getAntiForgeryToken() {
+            const input = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
+            return input ? input.value : '';
+        }
+
+        async function searchUsers(term) {
+            if (!term || term.length < 2) {
+                document.getElementById('searchResults').innerHTML = '';
+                return;
+            }
+
+            const res = await fetch(`/MembreProjet/SearchUsers?term=${encodeURIComponent(term)}&projectId=${@projectId}`);
+            if (!res.ok) return;
+            const users = await res.json();
+
+            const container = document.getElementById('searchResults');
+            container.innerHTML = '';
+
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div class="text-sm text-gray-500 italic">Aucun résultat</div>';
+                return;
+            }
+
+            users.forEach(u => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between p-2 border rounded';
+
+                const left = document.createElement('div');
+                left.className = 'text-sm text-gray-800';
+                left.textContent = u.text;
+
+                const btn = document.createElement('button');
+                btn.className = 'px-3 py-1 bg-teal-600 text-white rounded text-sm';
+                btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i>Ajouter';
+                btn.onclick = () => addMember(@projectId, u.id, btn);
+
+                row.appendChild(left);
+                row.appendChild(btn);
+                container.appendChild(row);
+            });
+        }
+
+            async function addMember(projectId, userId, btn) {
+            btn.disabled = true;
+            const token = getAntiForgeryToken();
+            const body = new URLSearchParams();
+            body.append('projectId', projectId);
+            body.append('userId', userId);
+
+            try {
+                const res = await fetch('/MembreProjet/AddMember', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'RequestVerificationToken': token,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: body.toString()
+                });
+
+                if (res.ok) {
+                    window.location.href = `/Projects/Details/${projectId}`;
+                } else {
+                    // afficher le corps de la réponse (message détaillé renvoyé par le serveur)
+                    const text = await res.text();
+                    console.error('AddMember failed', res.status, text);
+                    alert('Erreur lors de l\'ajout du membre :\n' + text);
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erreur réseau');
+                btn.disabled = false;
+            }
+        }
+
+        (function () {
+            const input = document.getElementById('userSearch');
+            const btn = document.getElementById('searchBtn');
+            let timeout;
+            if (input) {
+                input.addEventListener('input', function () {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => searchUsers(this.value.trim()), 300);
+                });
+            }
+            if (btn) {
+                btn.addEventListener('click', () => searchUsers(input.value.trim()));
+            }
+        })();
+    </script>
+}

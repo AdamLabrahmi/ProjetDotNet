@@ -16,7 +16,6 @@
   <ItemGroup>
     <Folder Include="Views\Comments\" />
     <Folder Include="Views\Files\" />
-    <Folder Include="Views\ProjectMembers\" />
     <Folder Include="Views\User\" />
   </ItemGroup>
 

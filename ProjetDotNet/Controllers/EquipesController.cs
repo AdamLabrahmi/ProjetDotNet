@@ -1,11 +1,13 @@
-﻿using System.Linq;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using ProjetDotNet.Data;
 using ProjetDotNet.Models;
+using ProjetDotNet.Models.Enums;
+using System.Security.Claims;
 
 namespace ProjetDotNet.Controllers
 {
@@ -14,11 +16,13 @@ namespace ProjetDotNet.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ILogger<EquipesController> _logger;
+        //private readonly IEmailSender _emailSender;
 
         public EquipesController(AppDbContext context, ILogger<EquipesController> logger)
         {
             _context = context;
             _logger = logger;
+            //_emailSender = emailSender;
         }
 
         // GET: /Equipes or /Equipes?orgId=1
@@ -29,7 +33,12 @@ namespace ProjetDotNet.Controllers
             var totalCount = _context.Equipes.Count();
             _logger.LogInformation("Equipes total en base: {Count}", totalCount);
 
-            IQueryable<Equipe> query = _context.Equipes.AsNoTracking();
+            // Construire la requête une seule fois, inclure les membres/utilisateurs pour la vue
+            var query = _context.Equipes
+                .AsNoTracking()
+                .Include(e => e.Membres)
+                    .ThenInclude(m => m.Utilisateur)
+                .AsQueryable();
 
             if (orgId.HasValue)
             {
@@ -43,6 +52,27 @@ namespace ProjetDotNet.Controllers
 
             _logger.LogInformation("Equipes retournées: {Count}", listes.Count);
             return View("~/Views/Equipes/Index.cshtml", listes);
+        }
+
+        // GET: /Equipes/Details/5
+        public IActionResult Details(int id)
+        {
+            // Charger l'équipe avec son organisation et ses membres + utilisateurs
+            var equipe = _context.Equipes
+                .AsNoTracking()
+                .Include(e => e.Organisation)
+                .Include(e => e.Membres)
+                    .ThenInclude(m => m.Utilisateur)
+                .FirstOrDefault(e => e.TeamID == id);
+
+            if (equipe == null)
+            {
+                _logger.LogWarning("Détails demandés pour une équipe introuvable (ID = {Id})", id);
+                return NotFound();
+            }
+
+            ViewBag.TeamId = id;
+            return View("~/Views/Equipes/Details.cshtml", equipe);
         }
 
         // GET: Create - affiche la liste des organisations pour choix manuel
@@ -185,5 +215,7 @@ namespace ProjetDotNet.Controllers
 
             return RedirectToAction("Index");
         }
+
+        
     }
 }

@@ -1,20 +1,29 @@
-﻿using ProjetDotNet.Models.Enums;
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
+using ProjetDotNet.Models.Enums;
+
 namespace ProjetDotNet.Models
 {
+    [Table("membre_projet")]
     public class MembreProjet
     {
-        [Key]
-        public int MembreProjetID { get; set; }
-        // clé composite configurée dans DbContext
+        [Column("userID")]
         public int UserID { get; set; }
+
+        [Column("projectID")]
         public int ProjectID { get; set; }
 
-        public RoleProjet Role { get; set; }
+        [Column("role")]
+        public RoleProjet Role { get; set; } = RoleProjet.Contributeur;
+
+        [Column("dateAjout")]
         public DateTime DateAjout { get; set; } = DateTime.Now;
 
-        public Utilisateur Utilisateur { get; set; }
-        public Projet Projet { get; set; }
-    }
+        // navigations (rendre nullable pour éviter problèmes si pas chargées)
+        [ForeignKey(nameof(UserID))]
+        public Utilisateur? Utilisateur { get; set; }
 
+        [ForeignKey(nameof(ProjectID))]
+        public Projet? Projet { get; set; }
+    }
 }

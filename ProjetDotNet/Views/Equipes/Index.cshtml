@@ -2,7 +2,10 @@
 @{
     ViewBag.Title = "Équipes";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-    var orgId = ViewBag.OrgID as int?;
+    int? orgId = ViewBag.OrgID != null ? (int?)ViewBag.OrgID : null;
+
+    // palette pour les fonds d'initiales
+    var colorClasses = new[] { "bg-teal-500", "bg-emerald-500", "bg-cyan-500", "bg-amber-500", "bg-purple-500" };
 }
 
 <!-- En-tête avec bouton d'action -->
@@ -110,7 +113,7 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                                        <span class="text-white font-bold">@e.Nom.Substring(0, 1).ToUpper()</span>
+                                        <span class="text-white font-bold">@(!string.IsNullOrEmpty(e.Nom) ? e.Nom.Substring(0,1).ToUpper() : "?")</span>
                                     </div>
                                     <div>
                                         <p class="font-semibold text-gray-800">@e.Nom</p>
@@ -129,23 +132,42 @@
                                 }
                             </td>
                             <td class="px-6 py-4">
-                                <div class="flex items-center space-x-2">
+                                @{
+                                    // prendre au plus 3 membres affichables (ayant Utilisateur non null)
+                                    var members = e.Membres?.Where(m => m.Utilisateur != null).ToList() ?? new List<ProjetDotNet.Models.MembreEquipe>();
+                                    var display = members.Take(3).ToList();
+                                    var totalMembers = members.Count;
+                                    var extra = totalMembers - display.Count;
+                                }
+                                <div class="flex items-center space-x-3">
                                     <div class="flex -space-x-2">
-                                        <div class="w-8 h-8 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center">
-                                            <span class="text-white text-xs font-semibold">A</span>
-                                        </div>
-                                        <div class="w-8 h-8 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
-                                            <span class="text-white text-xs font-semibold">B</span>
-                                        </div>
-                                        <div class="w-8 h-8 bg-cyan-500 rounded-full border-2 border-white flex items-center justify-center">
-                                            <span class="text-white text-xs font-semibold">C</span>
-                                        </div>
+                                        @foreach (var m in display)
+                                        {
+                                            var name = m.Utilisateur?.Nom ?? m.Utilisateur?.Email ?? "?";
+                                            var initial = !string.IsNullOrEmpty(name) ? name.Substring(0,1).ToUpper() : "?";
+                                            var color = colorClasses[(m.UserID.GetHashCode() & int.MaxValue) % colorClasses.Length];
+                                            <div class="w-8 h-8 @color rounded-full border-2 border-white flex items-center justify-center">
+                                                <span class="text-white text-xs font-semibold">@initial</span>
+                                            </div>
+                                        }
                                     </div>
-                                    <span class="text-sm text-gray-500">+3</span>
+
+                                    @if (extra > 0)
+                                    {
+                                        <span class="text-sm text-gray-500">+@extra</span>
+                                    }
                                 </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-end space-x-2">
+                                    <a asp-controller="MembreEquipe"
+                                       asp-action="Add"
+                                       asp-route-teamId="@e.TeamID"
+                                       class="p-2 bg-teal-600 text-white rounded hover:bg-teal-700"
+                                       title="Ajouter un membre">
+                                        <i class="fas fa-user-plus"></i>
+                                    </a>
+
                                     <a asp-action="Details" asp-route-id="@e.TeamID"
                                        class="text-gray-600 hover:text-teal-600 transition p-2 rounded-lg hover:bg-teal-50"
                                        title="Voir les détails">

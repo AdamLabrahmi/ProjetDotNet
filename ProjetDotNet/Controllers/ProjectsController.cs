@@ -24,24 +24,51 @@ namespace ProjetDotNet.Controllers
         }
 
         // GET: /Projects
+        //public IActionResult Index()
+        //{
+        //    var projets = _context.Projets
+        //        .Include(p => p.Organisation)
+        //        .OrderByDescending(p => p.DateCreation)
+        //        .ToList();
+        //    return View("~/Views/Projects/Index.cshtml", projets);
+        //}
+
+
         public IActionResult Index()
         {
             var projets = _context.Projets
                 .Include(p => p.Organisation)
+                .Include(p => p.Membres)                    
+                    .ThenInclude(mp => mp.Utilisateur)
                 .OrderByDescending(p => p.DateCreation)
                 .ToList();
             return View("~/Views/Projects/Index.cshtml", projets);
         }
 
+
+
         // GET: /Projects/Details/5
+        //public IActionResult Details(int id)
+        //{
+        //    var projet = _context.Projets
+        //        .Include(p => p.Organisation)
+        //        .FirstOrDefault(p => p.ProjectID == id);
+        //    if (projet == null) return NotFound();
+        //    return View("~/Views/Projects/Details.cshtml", projet);
+        //}
+
         public IActionResult Details(int id)
         {
             var projet = _context.Projets
+                .AsNoTracking()
                 .Include(p => p.Organisation)
+                .Include(p => p.Membres)                    
+                    .ThenInclude(mp => mp.Utilisateur)
                 .FirstOrDefault(p => p.ProjectID == id);
             if (projet == null) return NotFound();
             return View("~/Views/Projects/Details.cshtml", projet);
         }
+
 
         // GET: /Projects/Create
         public IActionResult Create()

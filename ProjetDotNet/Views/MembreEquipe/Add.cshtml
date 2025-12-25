@@ -1,0 +1,51 @@
+﻿@{
+    ViewBag.Title = "Ajouter un membre";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<h2 class="text-xl font-bold mb-4">Ajouter un membre à l’équipe</h2>
+
+<input type="text"
+       id="search"
+       placeholder="Rechercher par nom ou email..."
+       class="border p-2 w-full mb-3" />
+
+<ul id="results" class="border rounded"></ul>
+
+<script>
+    const teamId = @ViewBag.TeamId;
+
+    document.getElementById("search").addEventListener("keyup", function () {
+        fetch(`/MembreEquipe/SearchUsers?term=${this.value}&teamId=${teamId}`)
+            .then(r => r.json())
+            .then(data => {
+                let ul = document.getElementById("results");
+                ul.innerHTML = "";
+
+                if (data.length === 0) {
+                    ul.innerHTML = "<li class='p-2 text-gray-500'>Aucun résultat</li>";
+                }
+
+                data.forEach(u => {
+                    ul.innerHTML += `
+                      <li class="p-2 hover:bg-gray-100 cursor-pointer"
+                          onclick="addMember(${u.id})">
+                          ${u.text}
+                      </li>`;
+                });
+            });
+    });
+
+    function addMember(userId) {
+        fetch('/MembreEquipe/AddMember', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `teamId=${teamId}&userId=${userId}`
+        }).then(() => {
+            alert("Membre ajouté !");
+            window.location.reload();
+        });
+    }
+</script>

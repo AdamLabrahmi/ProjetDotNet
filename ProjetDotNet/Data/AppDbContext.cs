@@ -20,6 +20,7 @@ namespace ProjetDotNet.Data
         public DbSet<Admin> Admins { get; set; }
         public DbSet<Commentaire> Commentaires { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Invitation> Invitations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,7 +34,7 @@ namespace ProjetDotNet.Data
             modelBuilder.Entity<Admin>().ToTable("admin");
             modelBuilder.Entity<Notification>().ToTable("notification");
             modelBuilder.Entity<Commentaire>().ToTable("commentaire");
-
+            modelBuilder.Entity<Invitation>().ToTable("invitation");
 
             modelBuilder.Entity<ProjetDotNet.Models.Tache>(entity =>
             {
@@ -92,22 +93,6 @@ namespace ProjetDotNet.Data
                         .HasMaxLength(50);
             });
 
-            // Tache enums
-            //modelBuilder.Entity<Tache>(builder =>
-            //{
-            //    builder.Property(t => t.Type)
-            //            .HasConversion<string>()
-            //            .HasMaxLength(50);
-
-            //    builder.Property(t => t.Priorite)
-            //           .HasConversion<string>()
-            //           .HasMaxLength(50);
-
-            //    builder.Property(t => t.Statut)
-            //           .HasConversion<string>()
-            //           .HasMaxLength(50);
-            //});
-
             // Remplacer les mappings Tache par ce bloc unique et exact
             modelBuilder.Entity<Tache>(entity =>
             {
@@ -138,21 +123,67 @@ namespace ProjetDotNet.Data
                 entity.Property(e => e.DateResolution).HasColumnName("dateResolution");
             });
 
-
-            // MembreProjet.Role (RoleProjet)
-            modelBuilder.Entity<MembreProjet>(builder =>
+            // Mapping de MembreEquipe : clé composite (userID, teamID) pour correspondre à la table existante
+            modelBuilder.Entity<MembreEquipe>(entity =>
             {
-                builder.Property(m => m.Role)
-                       .HasConversion<string>()
-                       .HasMaxLength(50);
+                entity.ToTable("membre_equipe");
+
+                // clé composite correspondant aux colonnes existantes
+                entity.HasKey(m => new { m.UserID, m.TeamID });
+
+                entity.Property(m => m.UserID).HasColumnName("userID");
+                entity.Property(m => m.TeamID).HasColumnName("teamID");
+
+                // Utiliser des méthodes (appelées depuis des expressions) au lieu d'une switch expression directe
+                // pour éviter l'erreur "Une arborescence de l'expression ne peut pas contenir d'expression switch".
+                entity.Property(m => m.Role)
+                      .HasConversion(
+                          v => MapRoleToDatabaseString(v),
+                          s => MapDatabaseStringToRole(s))
+                      .HasMaxLength(50)
+                      .HasColumnName("role");
+                entity.Property(m => m.DateAjout).HasColumnName("dateAjout");
+
+                // relations
+                entity.HasOne(m => m.Utilisateur)
+                      .WithMany(u => u.Equipes)
+                      .HasForeignKey(m => m.UserID)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.Equipe)
+                      .WithMany(e => e.Membres)
+                      .HasForeignKey(m => m.TeamID)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
-            //modelBuilder.Entity<MembreEquipe>(builder =>
-            //{
-            //    builder.Property("Role")
-            //           .HasConversion<string>()
-            //           .HasColumnType("int");
-            //});
+            // mapping explicite pour MembreProjet
+            modelBuilder.Entity<MembreProjet>(entity =>
+            {
+                entity.ToTable("membre_projet");
+                entity.HasKey(m => new { m.UserID, m.ProjectID });
+
+                entity.Property(m => m.UserID).HasColumnName("userID");
+                entity.Property(m => m.ProjectID).HasColumnName("projectID");
+
+                entity.Property(m => m.Role)
+                      .HasConversion(v => v.ToString(),
+                                     s => (RoleProjet)Enum.Parse(typeof(RoleProjet), s, true))
+                      .HasMaxLength(50)
+                      .HasColumnName("role");
+
+                entity.Property(m => m.DateAjout).HasColumnName("dateAjout");
+
+                // relations - utiliser les collections inverses existantes
+                entity.HasOne(m => m.Utilisateur)
+                      .WithMany(u => u.Projets)   // ICollection<MembreProjet> Projets dans Utilisateur
+                      .HasForeignKey(m => m.UserID)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.Projet)
+                      .WithMany(p => p.Membres)   // ICollection<MembreProjet> Membres dans Projet
+                      .HasForeignKey(m => m.ProjectID)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
             modelBuilder.Entity<MembreEquipe>()
                           .Property(m => m.Role)
@@ -160,6 +191,42 @@ namespace ProjetDotNet.Data
                           .HasMaxLength(50);
 
             // Si d'autres enums existent (RoleEquipe, RoleProjet, etc.), mappez-les ici de la même façon.
+        }
+
+        // Méthodes auxiliaires utilisées par HasConversion : méthode appelée dans l'expression (évite SwitchExpression)
+        private static string MapRoleToDatabaseString(RoleEquipe role)
+        {
+            // adapter les chaînes aux valeurs attendues par la DB (respect de la casse)
+            return role switch
+            {
+                RoleEquipe.Admin => "Admin",
+                RoleEquipe.Membre => "Membre",
+                RoleEquipe.ScrumMaster => "ScrumMaster",
+                RoleEquipe.ProductOwner => "ProductOwner",
+                RoleEquipe.Designer => "Designer",
+                RoleEquipe.QA => "QA",
+                RoleEquipe.Observateur => "Observateur",
+                _ => role.ToString()
+            };
+        }
+
+        private static RoleEquipe MapDatabaseStringToRole(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+                return RoleEquipe.Membre; // valeur par défaut sûre
+
+            // comparer en respectant la casse exacte si nécessaire, sinon normaliser
+            return s switch
+            {
+                "Admin" => RoleEquipe.Admin,
+                "Membre" => RoleEquipe.Membre,
+                "ScrumMaster" => RoleEquipe.ScrumMaster,
+                "ProductOwner" => RoleEquipe.ProductOwner,
+                "Designer" => RoleEquipe.Designer,
+                "QA" => RoleEquipe.QA,
+                "Observateur" => RoleEquipe.Observateur,
+                _ => Enum.TryParse<RoleEquipe>(s, out var parsed) ? parsed : RoleEquipe.Membre
+            };
         }
     }
 }

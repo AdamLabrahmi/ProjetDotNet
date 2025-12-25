@@ -1,0 +1,177 @@
+﻿@model ProjetDotNet.Models.Equipe
+@{
+    ViewBag.Title = "Détails de l'équipe";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    int teamId = Model.TeamID;
+}
+
+@* Anti-forgery token utilisé par les requêtes fetch *@
+<form id="antiForgeryForm">@Html.AntiForgeryToken()</form>
+
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">@Model.Nom</h1>
+            <p class="text-gray-600">@(!string.IsNullOrEmpty(Model.Description) ? Model.Description : "Aucune description")</p>
+            <p class="text-xs text-gray-400 mt-1">ID: @Model.TeamID — Organisation: @Model.OrgID</p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <a asp-action="Edit" asp-route-id="@Model.TeamID" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                <i class="fas fa-edit mr-2"></i>Modifier l'équipe
+            </a>
+            <a asp-action="Index" asp-route-orgId="@Model.OrgID" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Membres -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Membres (@(Model.Membres?.Count() ?? 0))</h2>
+                    <div class="text-sm text-gray-500">Gérer les membres</div>
+                </div>
+
+                <div class="space-y-3">
+                    @* Liste des membres *@
+                    @if (Model.Membres != null && Model.Membres.Any(m => m.Utilisateur != null))
+                    {
+                        foreach (var m in Model.Membres.Where(m => m.Utilisateur != null))
+                        {
+                            var name = m.Utilisateur?.Nom ?? m.Utilisateur?.Email ?? "Utilisateur";
+                            var initial = !string.IsNullOrEmpty(name) ? name.Substring(0,1).ToUpper() : "?";
+                            <div class="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                        @initial
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-800">@name</div>
+                                        <div class="text-xs text-gray-500">@m.Utilisateur?.Email</div>
+                                    </div>
+                                    <div class="ml-4 px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">
+                                        @m.Role.ToString()
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    @* Bouton Modifier (ouvre la vue Edit du membre) *@
+                                    <a asp-controller="MembreEquipe"
+                                       asp-action="Edit"
+                                       asp-route-teamId="@m.TeamID"
+                                       asp-route-userId="@m.UserID"
+                                       class="px-3 py-1 text-sm text-teal-700 border border-teal-200 rounded hover:bg-teal-50 flex items-center space-x-1">
+                                        <i class="fas fa-user-edit"></i>
+                                        <span class="ml-1">Modifier</span>
+                                    </a>
+
+                                    @* Bouton Retirer : type="button" pour éviter comportement submit inattendu *@
+                                    <form asp-controller="MembreEquipe" asp-action="Delete" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="teamId" value="@m.TeamID" />
+                                        <input type="hidden" name="userId" value="@m.UserID" />
+                                        <button type="submit"
+                                                class="px-3 py-1 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50 flex items-center space-x-1"
+                                                onclick="return confirm('Retirer ce membre de l\\'équipe ?');">
+                                            <i class="fas fa-user-minus"></i>
+                                            <span class="ml-1">Retirer</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-gray-500 italic">Aucun membre dans cette équipe.</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Ajouter un membre (recherche) -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <h3 class="text-lg font-semibold mb-3">Ajouter un membre</h3>
+                <p class="text-sm text-gray-600 mb-3">Recherchez un utilisateur par nom ou email et ajoutez-le à l'équipe.</p>
+
+                <div class="flex items-center space-x-2">
+                    <input id="userSearch" type="text" placeholder="Rechercher nom ou email..."
+                           class="flex-1 px-4 py-2 border rounded-lg focus:outline-none" />
+                    <button id="searchBtn" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                        Rechercher
+                    </button>
+                </div>
+
+                <div id="searchResults" class="mt-4 space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- Colonne droite : actions rapides / résumé -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h4 class="font-semibold text-gray-800 mb-2">Résumé</h4>
+                <div class="text-sm text-gray-600">
+                    <div class="mb-2"><span class="font-medium">ID:</span> @Model.TeamID</div>
+                    <div class="mb-2"><span class="font-medium">Organisation ID:</span> @Model.OrgID</div>
+                    <div class="mb-2"><span class="font-medium">Membres:</span> @(Model.Membres?.Count() ?? 0)</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-6">
+                <h4 class="font-semibold text-gray-800 mb-2">Actions</h4>
+                <div class="space-y-2">
+                    <a asp-controller="MembreEquipe" asp-action="Add" asp-route-teamId="@Model.TeamID"
+                       class="block px-4 py-2 bg-teal-600 text-white rounded-lg text-center hover:bg-teal-700">
+                        Ajouter via formulaire
+                    </a>
+                    <a asp-action="Edit" asp-route-id="@Model.TeamID"
+                       class="block px-4 py-2 border border-gray-200 rounded-lg text-center hover:bg-gray-50">
+                        Modifier l'équipe
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function removeMemberAjax(teamId, userId, btn) {
+            if (!confirm('Retirer ce membre de l\\'équipe ?')) return;
+            btn.disabled = true;
+            const tokenEl = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
+            const token = tokenEl ? tokenEl.value : '';
+            const body = new URLSearchParams();
+            body.append('teamId', teamId);
+            body.append('userId', userId);
+
+            try {
+                const res = await fetch('/MembreEquipe/RemoveMember', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'RequestVerificationToken': token,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: body.toString()
+                });
+
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    const text = await res.text();
+                    console.error('RemoveMember failed', res.status, text);
+                    alert('Erreur lors de la suppression du membre: ' + (text || res.status));
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erreur réseau lors de la suppression du membre');
+                btn.disabled = false;
+            }
+        }
+    </script>
+}
