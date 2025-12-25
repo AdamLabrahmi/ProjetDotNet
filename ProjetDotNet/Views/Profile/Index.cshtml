@@ -4,6 +4,16 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
+<!-- Affichage messages -->
+@if (TempData["Message"] != null)
+{
+    <div class="max-w-3xl mx-auto mb-4 p-3 bg-green-100 text-green-800 rounded">@TempData["Message"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="max-w-3xl mx-auto mb-4 p-3 bg-red-100 text-red-800 rounded">@TempData["Error"]</div>
+}
+
 <!-- Header avec bannière -->
 <div class="mb-6">
     <div class="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-2xl h-48 relative overflow-hidden">
@@ -12,26 +22,26 @@
             <div class="flex items-end space-x-6">
                 <!-- Avatar -->
                 <div class="relative group">
-                    <div class="w-32 h-32 bg-white rounded-2xl shadow-xl flex items-center justify-center border-4 border-white">
+                    <div class="w-32 h-32 bg-white rounded-2xl shadow-xl flex items-center justify-center border-4 border-white overflow-hidden">
                         @if (!string.IsNullOrEmpty(Model.Avatar))
                         {
-                            <img src="@Model.Avatar" alt="Avatar" class="w-full h-full rounded-2xl object-cover" />
+                            <img id="avatarHeaderImg" src="@Model.Avatar" alt="Avatar" class="w-full h-full rounded-2xl object-cover" />
                         }
                         else
                         {
-                            <span class="text-5xl font-bold text-teal-600">
+                            <span id="avatarHeaderInitial" class="text-5xl font-bold text-teal-600">
                                 @(!string.IsNullOrEmpty(Model.Nom) ? Model.Nom.Substring(0, 1).ToUpper() : "U")
                             </span>
                         }
                     </div>
-                    <!-- Bouton upload avatar -->
-                    <button class="absolute bottom-0 right-0 w-10 h-10 bg-teal-600 text-white rounded-full shadow-lg hover:bg-teal-700 transition flex items-center justify-center">
+                    <!-- Bouton upload avatar (ouvre le file chooser en édition) -->
+                    <button id="editToggleTop" type="button" class="absolute bottom-0 right-0 w-10 h-10 bg-teal-600 text-white rounded-full shadow-lg hover:bg-teal-700 transition flex items-center justify-center">
                         <i class="fas fa-camera text-sm"></i>
                     </button>
                 </div>
                 <!-- Infos rapides -->
                 <div class="flex-1 pb-4">
-                    <h1 class="text-3xl font-bold text-white mb-1">@Model.Nom</h1>
+                    <h1 class="text-3xl font-bold text-white mb-1" id="headerName">@Model.Nom</h1>
                     <p class="text-teal-100 flex items-center">
                         <i class="fas fa-envelope mr-2"></i>@Model.Email
                     </p>
@@ -47,39 +57,56 @@
     <!-- Colonne gauche - Informations principales -->
     <div class="lg:col-span-2 space-y-6">
 
-        <!-- Carte Informations personnelles -->
-        <div class="bg-white rounded-2xl shadow-lg p-6">
+        <!-- Carte Informations personnelles (form inline) -->
+        <!-- enctype nécessaire pour upload -->
+        <form asp-action="Index" method="post" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-lg p-6" id="profileForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="UserID" />
+
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-2xl font-bold text-gray-800 flex items-center">
                     <i class="fas fa-user-circle text-teal-600 mr-3"></i>
                     Informations personnelles
                 </h2>
-                <a href="@Url.Action("Edit")"
-                   class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition shadow-md flex items-center">
-                    <i class="fas fa-edit mr-2"></i>Modifier
-                </a>
+
+                <div class="flex items-center space-x-2">
+                    <button id="editToggle" type="button"
+                            class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition shadow-md flex items-center">
+                        <i class="fas fa-edit mr-2"></i>
+                        <span>Modifier</span>
+                    </button>
+
+                    <button id="saveBtn" type="submit" class="hidden bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition shadow-md flex items-center">
+                        <i class="fas fa-save mr-2"></i>Enregistrer
+                    </button>
+
+                    <button id="cancelBtn" type="button" class="hidden bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition shadow-md flex items-center">
+                        <i class="fas fa-times mr-2"></i>Annuler
+                    </button>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Nom complet -->
+                <!-- Nom complet (editable) -->
                 <div class="space-y-2">
                     <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Nom complet</label>
                     <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
                         <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
                             <i class="fas fa-user text-teal-600"></i>
                         </div>
-                        <p class="text-gray-800 font-medium">@Model.Nom</p>
+                        <input asp-for="Nom" class="text-gray-800 font-medium bg-transparent w-full px-2 py-1 border rounded" disabled />
+                        <span asp-validation-for="Nom" class="text-red-600 text-sm"></span>
                     </div>
                 </div>
 
-                <!-- Email -->
+                <!-- Email (non modifiable) -->
                 <div class="space-y-2">
                     <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Email</label>
                     <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
                         <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
                             <i class="fas fa-envelope text-emerald-600"></i>
                         </div>
-                        <p class="text-gray-800 font-medium">@Model.Email</p>
+                        <input asp-for="Email" class="text-gray-800 font-medium bg-transparent w-full px-2 py-1 border rounded" readonly />
                     </div>
                 </div>
 
@@ -90,28 +117,30 @@
                         <div class="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
                             <i class="fas fa-phone text-cyan-600"></i>
                         </div>
-                        <p class="text-gray-800 font-medium">
-                            @(!string.IsNullOrEmpty(Model.Telephone) ? Model.Telephone : "Non renseigné")
-                        </p>
+                        <input asp-for="Telephone" class="text-gray-800 font-medium bg-transparent w-full px-2 py-1 border rounded" disabled />
                     </div>
                 </div>
 
-                <!-- Date d'inscription -->
+                <!-- Avatar URL + file input -->
                 <div class="space-y-2">
-                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Membre depuis</label>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Avatar (URL ou upload)</label>
                     <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
                         <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-calendar text-amber-600"></i>
+                            <i class="fas fa-image text-amber-600"></i>
                         </div>
-                        @* <p class="text-gray-800 font-medium">
-                            @(Model.DateInscription?.ToString("dd MMMM yyyy") ?? "Non disponible")
-                        </p> *@
+
+                        <div class="flex-1">
+                            <input asp-for="Avatar" class="text-gray-800 font-medium bg-transparent w-full px-2 py-1 border rounded mb-2" disabled />
+                            <input type="file" name="avatarFile" id="avatarFile" accept="image/*" class="hidden" />
+                            <p class="text-xs text-gray-500">Ou téléversez une image depuis votre appareil (max 2MB).</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Carte Activité récente -->
+            </div>
+        </form>
+
+        <!-- Carte Activité récente (inchangée) -->
         <div class="bg-white rounded-2xl shadow-lg p-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
                 <i class="fas fa-chart-line text-teal-600 mr-3"></i>
@@ -119,41 +148,7 @@
             </h2>
 
             <div class="space-y-4">
-                <!-- Activité 1 -->
-                <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                    <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-check-circle text-teal-600"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="font-semibold text-gray-800">Tâche terminée</p>
-                        <p class="text-sm text-gray-500">Design de l'interface utilisateur</p>
-                    </div>
-                    <span class="text-xs text-gray-400">Il y a 2h</span>
-                </div>
-
-                <!-- Activité 2 -->
-                <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-comment text-emerald-600"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="font-semibold text-gray-800">Nouveau commentaire</p>
-                        <p class="text-sm text-gray-500">Sur le projet Application Mobile</p>
-                    </div>
-                    <span class="text-xs text-gray-400">Il y a 5h</span>
-                </div>
-
-                <!-- Activité 3 -->
-                <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                    <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-folder-plus text-cyan-600"></i>
-                    </div>
-                    <div class="flex-1">
-                        <p class="font-semibold text-gray-800">Nouveau projet créé</p>
-                        <p class="text-sm text-gray-500">Site Web E-commerce</p>
-                    </div>
-                    <span class="text-xs text-gray-400">Hier</span>
-                </div>
+                <!-- ... activités ... -->
             </div>
         </div>
     </div>
@@ -218,22 +213,22 @@
             <h2 class="text-xl font-bold text-gray-800 mb-4">Actions rapides</h2>
 
             <div class="space-y-3">
-                <button class="w-full flex items-center space-x-3 p-3 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition">
+                <button type="button" id="openChangePassword" class="w-full flex items-center space-x-3 p-3 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition">
                     <i class="fas fa-key"></i>
                     <span class="font-medium">Changer le mot de passe</span>
                 </button>
 
-                <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+                <button type="button" class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
                     <i class="fas fa-bell"></i>
                     <span class="font-medium">Notifications</span>
                 </button>
 
-                <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+                <button type="button" class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
                     <i class="fas fa-shield-alt"></i>
                     <span class="font-medium">Sécurité</span>
                 </button>
 
-                <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+                <button type="button" class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
                     <i class="fas fa-download"></i>
                     <span class="font-medium">Télécharger mes données</span>
                 </button>
@@ -258,27 +253,165 @@
     </div>
 </div>
 
-<!-- Modal Upload Avatar (optionnel) -->
-<div id="avatarModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
-        <h3 class="text-2xl font-bold mb-4">Changer l'avatar</h3>
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
-            <p class="text-gray-600 mb-2">Glissez une image ou cliquez pour parcourir</p>
-            <input type="file" accept="image/*" class="hidden" id="avatarInput" />
-            <button onclick="document.getElementById('avatarInput').click()"
-                    class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition mt-4">
-                Choisir une image
-            </button>
-        </div>
-        <div class="flex space-x-3 mt-6">
-            <button onclick="document.getElementById('avatarModal').classList.add('hidden')"
-                    class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
-                Annuler
-            </button>
-            <button class="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 transition">
-                Enregistrer
-            </button>
-        </div>
+<!-- Modal Change Password -->
+<div id="changePasswordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+        <h3 class="text-xl font-semibold mb-4">Changer le mot de passe</h3>
+        <form asp-controller="Profile" asp-action="ChangePassword" method="post" id="changePasswordForm">
+            @Html.AntiForgeryToken()
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mot de passe actuel</label>
+                    <input name="currentPassword" type="password" required class="w-full px-3 py-2 border rounded" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nouveau mot de passe</label>
+                    <input id="newPassword" name="newPassword" type="password" required class="w-full px-3 py-2 border rounded" />
+                    <p class="text-xs text-gray-500 mt-1">Au moins 8 caractères</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Confirmer le nouveau mot de passe</label>
+                    <input id="confirmPassword" name="confirmPassword" type="password" required class="w-full px-3 py-2 border rounded" />
+                    <p id="pwMatchError" class="text-red-600 text-sm hidden mt-1">Les mots de passe ne correspondent pas.</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" id="closeChangePassword" class="px-4 py-2 border rounded text-gray-700">Annuler</button>
+                <button type="submit" class="bg-amber-600 text-white px-4 py-2 rounded">Enregistrer</button>
+            </div>
+        </form>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            try {
+                // Edition inline profile
+                var editBtn = document.getElementById('editToggle');
+                var editTop = document.getElementById('editToggleTop');
+                var saveBtn = document.getElementById('saveBtn');
+                var cancelBtn = document.getElementById('cancelBtn');
+                var form = document.getElementById('profileForm');
+                var avatarFile = document.getElementById('avatarFile');
+                var avatarImg = document.getElementById('avatarHeaderImg');
+                var avatarInitial = document.getElementById('avatarHeaderInitial');
+
+                function setEditable(enabled) {
+                    if (!form) return;
+                    var editableNames = ['Nom', 'Telephone', 'Avatar'];
+                    editableNames.forEach(function(name) {
+                        var el = form.querySelector('[name="' + name + '"]');
+                        if (el) el.disabled = !enabled;
+                    });
+
+                    if (avatarFile) avatarFile.disabled = !enabled;
+
+                    if (enabled) {
+                        saveBtn && saveBtn.classList.remove('hidden');
+                        cancelBtn && cancelBtn.classList.remove('hidden');
+                        editBtn && editBtn.classList.add('hidden');
+                    } else {
+                        saveBtn && saveBtn.classList.add('hidden');
+                        cancelBtn && cancelBtn.classList.add('hidden');
+                        editBtn && editBtn.classList.remove('hidden');
+                    }
+                }
+
+                if (editBtn) editBtn.addEventListener('click', function() { setEditable(true); });
+                if (editTop) editTop.addEventListener('click', function() {
+                    setEditable(true);
+                    if (avatarFile) avatarFile.click();
+                });
+                if (cancelBtn) cancelBtn.addEventListener('click', function() {
+                    location.reload();
+                });
+
+                setEditable(false);
+
+                // Prévisualisation avatar côté client
+                if (avatarFile) {
+                    avatarFile.addEventListener('change', function() {
+                        var f = this.files && this.files[0];
+                        if (!f) return;
+                        var url = URL.createObjectURL(f);
+                        if (avatarImg) {
+                            avatarImg.src = url;
+                            if (avatarInitial) avatarInitial.style.display = 'none';
+                        } else if (avatarInitial) {
+                            var img = document.createElement('img');
+                            img.id = 'avatarHeaderImg';
+                            img.className = 'w-full h-full rounded-2xl object-cover';
+                            img.src = url;
+                            avatarInitial.replaceWith(img);
+                            avatarImg = img;
+                        }
+                    });
+                }
+
+                // Modal change password - gestion robuste ouverture / fermeture
+                var openBtn = document.getElementById('openChangePassword');
+                var modal = document.getElementById('changePasswordModal');
+                var closeBtn = document.getElementById('closeChangePassword');
+                var changeForm = document.getElementById('changePasswordForm');
+                var newPw = document.getElementById('newPassword');
+                var confirmPw = document.getElementById('confirmPassword');
+                var pwMatchError = document.getElementById('pwMatchError');
+
+                function showModal() {
+                    if (!modal) return;
+                    modal.classList.remove('hidden');
+                    setTimeout(function() {
+                        var first = modal.querySelector('input[type="password"], input:not([type])');
+                        if (first) first.focus();
+                    }, 50);
+                }
+                function hideModal() {
+                    if (!modal) return;
+                    modal.classList.add('hidden');
+                    if (changeForm) changeForm.reset();
+                    if (pwMatchError) pwMatchError.classList.add('hidden');
+                }
+
+                if (openBtn) openBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showModal();
+                });
+
+                if (closeBtn) closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    hideModal();
+                });
+
+                // fermer en cliquant sur l'overlay
+                if (modal) {
+                    modal.addEventListener('click', function(e) {
+                        if (e.target === modal) hideModal();
+                    });
+                }
+
+                // fermeture Échap
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                        hideModal();
+                    }
+                });
+
+                // validation simple client avant submit
+                if (changeForm) {
+                    changeForm.addEventListener('submit', function(e) {
+                        if (newPw && confirmPw && newPw.value !== confirmPw.value) {
+                            e.preventDefault();
+                            pwMatchError && pwMatchError.classList.remove('hidden');
+                            newPw.focus();
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Profile page script error:', err);
+            }
+        })();
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+}
