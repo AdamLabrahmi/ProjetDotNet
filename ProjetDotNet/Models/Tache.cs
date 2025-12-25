@@ -66,6 +66,13 @@ namespace ProjetDotNet.Models
         [ForeignKey("CreateurID")]
         public Utilisateur? Createur { get; set; }
 
+
+        // 🔗 Équipe (optionnelle)
+        //public int? EquipeID { get; set; }
+
+        //[ForeignKey("EquipeID")]
+        //public Equipe? Equipe { get; set; }
+
         // ========================
         // Collections
         // ========================

@@ -130,6 +130,22 @@ namespace ProjetDotNet.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        public IActionResult GetSprintsByProject(int projectId)
+        {
+            var sprints = _context.Sprints
+                .Where(s => s.ProjectID == projectId)
+                .OrderBy(s => s.DateDebut)
+                .Select(s => new
+                {
+                    s.SprintID,
+                    s.Nom
+                })
+                .ToList();
+
+            return Json(sprints);
+        }
+
         // GET: /Taches/Edit/5
         public IActionResult Edit(int id)
         {
@@ -277,6 +293,45 @@ namespace ProjetDotNet.Controllers
                     Selected = selectedId.HasValue && selectedId.Value == u.UserID
                 })
                 .ToList();
+        }
+
+        [HttpGet]
+        public IActionResult GetMembresByEquipe(int equipeId)
+        {
+            var membres = _context.MembreEquipes
+                .Where(me => me.TeamID == equipeId)
+                .Select(me => new
+                {
+                    me.Utilisateur.UserID,
+                    Nom = string.IsNullOrEmpty(me.Utilisateur.Nom)
+                        ? me.Utilisateur.Email
+                        : me.Utilisateur.Nom
+                })
+                .ToList();
+
+            return Json(membres);
+        }
+
+
+        [HttpGet]
+        public IActionResult GetEquipesByProjet(int projectId)
+        {
+            // Récupérer l'OrgID du projet, puis les équipes liées via OrgID (propriété 'OrgID' sur Equipe)
+            var orgId = _context.Projets
+                .Where(p => p.ProjectID == projectId)
+                .Select(p => p.OrgID)
+                .FirstOrDefault();
+
+            var equipes = _context.Equipes
+                .Where(e => e.OrgID == orgId)
+                .Select(e => new
+                {
+                    e.TeamID,
+                    e.Nom
+                })
+                .ToList();
+
+            return Json(equipes);
         }
 
 

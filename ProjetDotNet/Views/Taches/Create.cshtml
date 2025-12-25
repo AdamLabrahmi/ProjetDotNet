@@ -65,37 +65,53 @@
                 <span asp-validation-for="TempsRestant" class="text-sm text-red-600"></span>
             </div>
 
-            <div>
-                <label asp-for="ProjectID" class="block text-sm font-medium text-gray-700">
-                    Projet
-                </label>
-
+            <div class="mb-4">
+                <label asp-for="ProjectID">Projet</label>
                 <select asp-for="ProjectID"
+                        id="ProjectSelect"
                         asp-items="ViewBag.Projets"
-                        class="mt-1 block w-full border rounded px-3 py-2">
+                        class="w-full border px-3 py-2">
                     <option value="">-- Choisir un projet --</option>
                 </select>
-
-                <span asp-validation-for="ProjectID" class="text-sm text-red-600"></span>
             </div>
-
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-                <label asp-for="SprintID" class="block text-sm font-medium text-gray-700">Sprint (optionnel)</label>
-                <select asp-for="SprintID" asp-items="ViewBag.Sprints" class="mt-1 block w-full border rounded px-3 py-2">
-                    <option value="">-- Aucun --</option>
+        <!-- Affichage immédiat de Sprint + Equipe + Assignee -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="mb-4">
+                <label>Sprint</label>
+                <select asp-for="SprintID"
+                        id="SprintSelect"
+                        class="w-full border px-3 py-2"
+                        disabled>
+                    <option value="">-- Choisir un projet d'abord --</option>
                 </select>
-                <span asp-validation-for="SprintID" class="text-sm text-red-600"></span>
             </div>
 
-            <div>
-                <label asp-for="AssigneeID" class="block text-sm font-medium text-gray-700">Assigné (optionnel)</label>
-                <select asp-for="AssigneeID" asp-items="ViewBag.Utilisateurs" class="mt-1 block w-full border rounded px-3 py-2">
-                    <option value="">-- Aucun --</option>
+            <div class="mb-4">
+                <label>Équipe</label>
+                <select id="EquipeSelect"
+                        class="w-full border px-3 py-2"
+                        disabled>
+                    <option value="">-- Choisir un projet d'abord --</option>
                 </select>
-                <span asp-validation-for="AssigneeID" class="text-sm text-red-600"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="AssigneeID">Assigné</label>
+                <select asp-for="AssigneeID"
+                        id="AssigneeSelect"
+                        class="w-full border px-3 py-2"
+                        disabled>
+                    <option value="">-- Choisir une équipe d'abord --</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- autres champs (Sprint déjà présent, placeholder retiré) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <!-- placeholder alignement si besoin -->
             </div>
         </div>
 
@@ -112,7 +128,71 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        const projectSelect = document.getElementById("ProjectSelect");
+        const sprintSelect = document.getElementById("SprintSelect");
+        const equipeSelect = document.getElementById("EquipeSelect");
+        const assigneeSelect = document.getElementById("AssigneeSelect");
+
+        function resetSelect(select, text, disabled = true) {
+            select.innerHTML = `<option value="">${text}</option>`;
+            select.disabled = disabled;
+        }
+
+        projectSelect.addEventListener("change", async function () {
+            const projectId = this.value;
+
+            resetSelect(sprintSelect, "-- Chargement des sprints --");
+            resetSelect(equipeSelect, "-- Chargement des équipes --");
+            resetSelect(assigneeSelect, "-- Choisir une équipe d'abord --");
+
+            if (!projectId) {
+                resetSelect(sprintSelect, "-- Choisir un projet d'abord --");
+                resetSelect(equipeSelect, "-- Choisir un projet d'abord --");
+                return;
+            }
+
+            // === Charger Sprints ===
+            const sprintRes = await fetch(`/Taches/GetSprintsByProject?projectId=${projectId}`);
+            const sprints = await sprintRes.json();
+            sprintSelect.innerHTML = `<option value="">-- Aucun --</option>`;
+            sprints.forEach(s => {
+                sprintSelect.innerHTML += `<option value="${s.sprintID}">${s.nom}</option>`;
+            });
+            sprintSelect.disabled = false;
+
+            // === Charger Equipes ===
+            const equipeRes = await fetch(`/Taches/GetEquipesByProjet?projectId=${projectId}`);
+            const equipes = await equipeRes.json();
+            equipeSelect.innerHTML = `<option value="">-- Choisir une équipe --</option>`;
+            equipes.forEach(e => {
+                equipeSelect.innerHTML += `<option value="${e.teamID}">${e.nom}</option>`;
+            });
+            equipeSelect.disabled = false;
+        });
+
+        equipeSelect.addEventListener("change", async function () {
+            const equipeId = this.value;
+
+            resetSelect(assigneeSelect, "-- Chargement des membres --");
+
+            if (!equipeId) {
+                resetSelect(assigneeSelect, "-- Choisir une équipe d'abord --");
+                return;
+            }
+
+            const res = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}`);
+            const membres = await res.json();
+
+            assigneeSelect.innerHTML = `<option value="">-- Aucun --</option>`;
+            membres.forEach(m => {
+                assigneeSelect.innerHTML += `<option value="${m.userID}">${m.nom}</option>`;
+            });
+
+            assigneeSelect.disabled = false;
+        });
+    </script>
+
 }
