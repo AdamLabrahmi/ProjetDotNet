@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@using ProjetDotNet.Helpers
+@using ProjetDotNet.Models.Enums
+@inject ProjetDotNet.Data.AppDbContext _db
+
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -13,6 +17,18 @@
     </style>
 </head>
 <body class="bg-gray-50">
+    @{
+        // déterminer l'utilisateur courant et ses droits
+        int currentUserId = 0;
+        bool canSeeOrganisations = false;
+        if (User?.Identity?.IsAuthenticated ?? false)
+        {
+            currentUserId = AuthorizationHelper.GetCurrentUserId(User, _db);
+            canSeeOrganisations = AuthorizationHelper.IsSiteAdmin(_db, currentUserId)
+                                  || _db.MembreEquipes.Any(me => me.UserID == currentUserId && me.Role == RoleEquipe.Admin);
+        }
+    }
+
     <div class="flex h-screen overflow-hidden">
 
         <!-- Sidebar -->
@@ -38,10 +54,14 @@
                         <span class="font-medium">Tableau de bord</span>
                     </a>
 
-                    <a href="@Url.Action("Index", "Organisations")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
-                        <i class="fas fa-building text-lg"></i>
-                        <span class="font-medium">Organisation</span>
-                    </a>
+                    @* Afficher Organisations seulement si l'utilisateur est Admin d'équipe ou SiteAdmin *@
+                    @if (canSeeOrganisations)
+                    {
+                        <a href="@Url.Action("Index", "Organisations")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
+                            <i class="fas fa-building text-lg"></i>
+                            <span class="font-medium">Organisation</span>
+                        </a>
+                    }
 
                     <a href="@Url.Action("Index", "Equipes")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
                         <i class="fas fa-users text-lg"></i>
@@ -72,14 +92,6 @@
                         <i class="fas fa-chart-bar text-lg"></i>
                         <span class="font-medium">Rapports</span>
                     </a>
-
-                    <!-- Divider -->
-                    @* <div class="border-t border-teal-500 my-4"></div>
-
-                    <a href="@Url.Action("Index", "Settings")" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-teal-500 transition duration-200 group">
-                        <i class="fas fa-cog text-lg"></i>
-                        <span class="font-medium">Paramètres</span>
-                    </a> *@
                 </nav>
 
                 <!-- User Profile -->

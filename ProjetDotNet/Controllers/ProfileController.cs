@@ -10,6 +10,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace ProjetDotNet.Controllers
 {
@@ -18,11 +19,13 @@ namespace ProjetDotNet.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly ILogger<ProfileController> _logger;
 
-        public ProfileController(AppDbContext context, IWebHostEnvironment env)
+        public ProfileController(AppDbContext context, IWebHostEnvironment env, ILogger<ProfileController> logger)
         {
             _context = context;
             _env = env;
+            _logger = logger;
         }
 
         // GET: /Profile
@@ -114,7 +117,19 @@ namespace ProjetDotNet.Controllers
             user.Nom = model.Nom;
             user.Telephone = model.Telephone;
 
-            _context.SaveChanges();
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                // log complet
+                _logger.LogError(ex, "Erreur lors de la mise à jour du profil pour l'utilisateur {UserId}", user.UserID);
+
+                // message utilisateur et retour sans plantage
+                TempData["Error"] = "Une erreur serveur est survenue lors de l'enregistrement de l'avatar.";
+                return RedirectToAction("Index");
+            }
 
             TempData["Message"] = "Profil mis à jour.";
             return RedirectToAction("Index");

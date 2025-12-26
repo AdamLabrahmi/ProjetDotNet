@@ -1,80 +1,246 @@
 ﻿@model IEnumerable<ProjetDotNet.Models.Sprint>
+@using ProjetDotNet.Helpers
 @using ProjetDotNet.Models.Enums
+@inject ProjetDotNet.Data.AppDbContext _db
 @{
     ViewBag.Title = "Sprints";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var current = AuthorizationHelper.GetCurrentUserId(User, _db);
+    var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_db, current);
+
+    var canCreateAnySprint = isSiteAdmin ||
+        _db.MembreEquipes.Any(me => me.UserID == current && (me.Role == RoleEquipe.Admin || me.Role == RoleEquipe.ScrumMaster));
 }
 
-<div class="max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Sprints</h1>
-            <p class="text-gray-600">Liste des sprints</p>
-        </div>
-        <a asp-action="Create" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700">Nouveau sprint</a>
+<!-- En-tête avec bouton d'action -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Sprints</h1>
+        <p class="text-gray-600">Gérez vos sprints et leur planification</p>
     </div>
-
-    @if (Model != null && Model.Any())
+    @if (canCreateAnySprint)
     {
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
-                        <tr>
-                            <th class="px-4 py-3 text-left">Nom</th>
-                            <th class="px-4 py-3 text-left">Projet</th>
-                            <th class="px-4 py-3 text-left">Période</th>
-                            <th class="px-4 py-3 text-left">Statut</th>
-                            <th class="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        @foreach (var s in Model)
-                        {
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3">@s.Nom</td>
-                                <td class="px-4 py-3">@s.Projet?.Nom ?? "—"</td>
-                                <td class="px-4 py-3">
-                                    @s.DateDebut.ToString("dd/MM/yyyy") — @s.DateFin.ToString("dd/MM/yyyy")
-                                </td>
-                                <td class="px-4 py-3">
-                                    @switch (s.Statut)
-                                    {
-                                        case StatutSprint.PLANIFIE:
-                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Planifié</span>
-                                            ;
-                                            break;
-                                        case StatutSprint.EN_COURS:
-                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">En cours</span>
-                                            ;
-                                            break;
-                                        case StatutSprint.TERMINE:
-                                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Terminé</span>
-                                            ;
-                                            break;
-                                        default:
-                                            <span class="text-sm">@s.Statut</span>
-                                            ;
-                                            break;
-                                    }
-                                </td>
-                                <td class="px-4 py-3 text-right">
-                                    <a asp-action="Details" asp-route-id="@s.SprintID" class="text-gray-600 hover:text-teal-600 mr-2">Voir</a>
-                                    <a asp-action="Edit" asp-route-id="@s.SprintID" class="text-teal-600 hover:text-teal-700 mr-2">Modifier</a>
-                                    <a asp-action="Delete" asp-route-id="@s.SprintID" class="text-red-600 hover:text-red-700">Supprimer</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="bg-white rounded-xl p-8 text-center shadow">
-            <p class="text-gray-600">Aucun sprint trouvé.</p>
-            <a asp-action="Create" class="mt-4 inline-block bg-teal-600 text-white px-4 py-2 rounded-lg">Créer un sprint</a>
-        </div>
+        <a asp-action="Create"
+           class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg flex items-center space-x-2">
+            <i class="fas fa-plus"></i>
+            <span class="font-semibold">Nouveau sprint</span>
+        </a>
     }
 </div>
+
+<!-- Statistiques rapides -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-teal-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">Total sprints</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@(Model?.Count() ?? 0)</h3>
+            </div>
+            <div class="w-14 h-14 bg-teal-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-running text-teal-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">Planifiés</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@(Model?.Count(s => s.Statut == StatutSprint.PLANIFIE) ?? 0)</h3>
+            </div>
+            <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-calendar-alt text-blue-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">En cours</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@(Model?.Count(s => s.Statut == StatutSprint.EN_COURS) ?? 0)</h3>
+            </div>
+            <div class="w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-spinner text-yellow-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">Terminés</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@(Model?.Count(s => s.Statut == StatutSprint.TERMINE) ?? 0)</h3>
+            </div>
+            <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Barre de recherche et filtres -->
+<div class="bg-white rounded-xl shadow-md p-4 mb-6">
+    <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text"
+                       placeholder="Rechercher un sprint..."
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" />
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2">
+                <i class="fas fa-filter text-gray-600"></i>
+                <span class="text-gray-700">Filtrer</span>
+            </button>
+            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2">
+                <i class="fas fa-sort text-gray-600"></i>
+                <span class="text-gray-700">Trier</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <!-- Tableau des sprints -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <i class="fas fa-running text-teal-600 mr-2"></i>Nom
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <i class="fas fa-project-diagram text-teal-600 mr-2"></i>Projet
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <i class="fas fa-calendar text-teal-600 mr-2"></i>Période
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <i class="fas fa-info-circle text-teal-600 mr-2"></i>Statut
+                        </th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <i class="fas fa-cog text-teal-600 mr-2"></i>Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var s in Model)
+                    {
+                        var projectId = s.ProjectID;
+                        var canManageSprint = isSiteAdmin || AuthorizationHelper.CanCreateSprint(_db, current, projectId);
+
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-running text-white"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800">@s.Nom</p>
+                                        <p class="text-xs text-gray-500">ID: @s.SprintID</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if (s.Projet != null)
+                                {
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fas fa-folder text-gray-400"></i>
+                                        <span class="text-gray-700">@s.Projet.Nom</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-gray-400 italic">Non assigné</span>
+                                }
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center space-x-2 text-sm">
+                                        <i class="fas fa-play-circle text-green-500 text-xs"></i>
+                                        <span class="text-gray-700">@s.DateDebut.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2 text-sm">
+                                        <i class="fas fa-stop-circle text-red-500 text-xs"></i>
+                                        <span class="text-gray-700">@s.DateFin.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                @switch (s.Statut)
+                                {
+                                    case StatutSprint.PLANIFIE:
+                                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center">
+                                            <i class="fas fa-calendar-alt mr-1"></i>Planifié
+                                        </span>
+                                        break;
+                                    case StatutSprint.EN_COURS:
+                                        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center">
+                                            <i class="fas fa-spinner mr-1"></i>En cours
+                                        </span>
+                                        break;
+                                    case StatutSprint.TERMINE:
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center">
+                                            <i class="fas fa-check-circle mr-1"></i>Terminé
+                                        </span>
+                                        break;
+                                    default:
+                                        <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                            @s.Statut
+                                        </span>
+                                        break;
+                                }
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center justify-end space-x-2">
+                                    <a asp-action="Details" asp-route-id="@s.SprintID"
+                                       class="text-gray-600 hover:text-teal-600 transition p-2 rounded-lg hover:bg-teal-50"
+                                       title="Voir les détails">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (canManageSprint)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@s.SprintID"
+                                           class="text-teal-600 hover:text-teal-700 transition p-2 rounded-lg hover:bg-teal-50"
+                                           title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@s.SprintID"
+                                           class="text-red-600 hover:text-red-700 transition p-2 rounded-lg hover:bg-red-50"
+                                           title="Supprimer">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <!-- État vide -->
+    <div class="bg-white rounded-xl shadow-md p-12 text-center">
+        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-running text-gray-400 text-4xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Aucun sprint</h3>
+        <p class="text-gray-600 mb-6">Commencez par créer votre premier sprint</p>
+        @if (canCreateAnySprint)
+        {
+            <a asp-action="Create"
+               class="inline-flex items-center space-x-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-8 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg">
+                <i class="fas fa-plus"></i>
+                <span class="font-semibold">Créer un sprint</span>
+            </a>
+        }
+    </div>
+}

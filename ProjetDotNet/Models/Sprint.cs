@@ -7,7 +7,7 @@ using ProjetDotNet.Models.Enums;
 namespace ProjetDotNet.Models
 {
     [Table("sprint")]
-    public class Sprint
+    public class Sprint : IValidatableObject
     {
         [Key]
         public int SprintID { get; set; }
@@ -31,14 +31,34 @@ namespace ProjetDotNet.Models
 
         public DateTime DateCreation { get; set; } = DateTime.Now;
 
-        // Clé étrangère vers Projet (obligatoire)
         [Required(ErrorMessage = "Le projet est obligatoire")]
-        public int ProjectID { get; set; }  // Changé de int? à int pour forcer la non-nullabilité
+        public int ProjectID { get; set; }
 
-        // Navigation vers Projet — rendu nullable pour éviter la validation automatique
         [ForeignKey(nameof(ProjectID))]
-        public Projet? Projet { get; set; }  // Changé de Projet à Projet? et retiré = null!
+        public Projet? Projet { get; set; }
 
         public ICollection<Tache> Taches { get; set; } = new List<Tache>();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            // Vérifier que la date de début est strictement antérieure à la date de fin
+            if (DateDebut >= DateFin)
+            {
+                yield return new ValidationResult(
+                    "La date de début doit être strictement inférieure à la date de fin.",
+                    new[] { nameof(DateDebut), nameof(DateFin) });
+            }
+
+            // Optionnel : vérifier que DateDebut/DateFin sont cohérentes avec le projet si disponible
+            if (Projet != null && Projet.DateDebut.HasValue && Projet.DateFin.HasValue)
+            {
+                if (DateDebut < Projet.DateDebut.Value.Date || DateFin > Projet.DateFin.Value.Date)
+                {
+                    yield return new ValidationResult(
+                        "Les dates du sprint doivent être à l'intérieur des dates du projet.",
+                        new[] { nameof(DateDebut), nameof(DateFin) });
+                }
+            }
+        }
     }
 }

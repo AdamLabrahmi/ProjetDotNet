@@ -3,49 +3,262 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<h2 class="text-xl font-bold mb-4">Ajouter un membre à l’équipe</h2>
+<div class="max-w-4xl mx-auto">
+    <!-- En-tête -->
+    <div class="mb-6">
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">Ajouter un membre à l'équipe</h2>
+        <p class="text-gray-600">Recherchez et ajoutez des membres à votre équipe</p>
+    </div>
 
-<input type="text"
-       id="search"
-       placeholder="Rechercher par nom ou email..."
-       class="border p-2 w-full mb-3" />
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-<ul id="results" class="border rounded"></ul>
+        <!-- Section principale (2/3) -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-lg p-8">
+
+                <!-- Token anti-forgery caché -->
+                @Html.AntiForgeryToken()
+
+                <!-- Message de succès (masqué par défaut) -->
+                <div id="successMessage" class="hidden bg-green-50 border-l-4 border-green-500 p-4 rounded-lg mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 text-xl mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <h3 class="text-green-800 font-semibold mb-1">Membre ajouté avec succès !</h3>
+                            <p class="text-green-700 text-sm">Le membre a été ajouté à l'équipe.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message d'erreur (masqué par défaut) -->
+                <div id="errorMessage" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <h3 class="text-red-800 font-semibold mb-1">Erreur</h3>
+                            <p class="text-red-700 text-sm" id="errorText"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barre de recherche -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-search text-teal-600 mr-2"></i>
+                        Rechercher un utilisateur
+                    </label>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text"
+                               id="search"
+                               placeholder="Rechercher par nom ou email..."
+                               class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200" />
+                        <div id="searchSpinner" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2">
+                            <i class="fas fa-spinner fa-spin text-teal-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-500 text-xs mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Commencez à taper pour rechercher des utilisateurs
+                    </p>
+                </div>
+
+                <!-- Résultats de recherche -->
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Résultats de recherche</h3>
+                    <ul id="results" class="border-2 border-gray-200 rounded-lg divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                        <li class="p-6 text-center text-gray-400">
+                            <i class="fas fa-user-plus text-4xl mb-3 block"></i>
+                            <p>Recherchez un utilisateur pour commencer</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne droite (1/3) -->
+        <div class="space-y-6">
+
+            <!-- Carte d'aide -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-lightbulb text-teal-600 text-lg"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">Conseils</h3>
+                </div>
+                <ul class="space-y-3 text-sm text-gray-600">
+                    <li class="flex items-start space-x-2">
+                        <i class="fas fa-check text-teal-600 mt-1"></i>
+                        <span>Tapez le nom ou l'email de l'utilisateur</span>
+                    </li>
+                    <li class="flex items-start space-x-2">
+                        <i class="fas fa-check text-teal-600 mt-1"></i>
+                        <span>Cliquez sur un résultat pour ajouter le membre</span>
+                    </li>
+                    <li class="flex items-start space-x-2">
+                        <i class="fas fa-check text-teal-600 mt-1"></i>
+                        <span>Les utilisateurs déjà membres n'apparaissent pas</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Carte informations -->
+            <div class="bg-blue-50 rounded-xl shadow-lg p-6 border border-blue-200">
+                <div class="flex items-center space-x-3 mb-3">
+                    <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                    <h3 class="font-bold text-gray-800">À savoir</h3>
+                </div>
+                <p class="text-sm text-gray-700">
+                    Les nouveaux membres auront accès à tous les projets et tâches de l'équipe selon leurs permissions.
+                </p>
+            </div>
+
+            <!-- Bouton retour -->
+            <a href="javascript:history.back()"
+               class="w-full bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition flex items-center justify-center space-x-2 font-semibold">
+                <i class="fas fa-arrow-left"></i>
+                <span>Retour</span>
+            </a>
+        </div>
+    </div>
+</div>
 
 <script>
     const teamId = @ViewBag.TeamId;
+    const searchInput = document.getElementById("search");
+    const resultsList = document.getElementById("results");
+    const successMessage = document.getElementById("successMessage");
+    const errorMessage = document.getElementById("errorMessage");
+    const errorText = document.getElementById("errorText");
+    const searchSpinner = document.getElementById("searchSpinner");
+    let searchTimeout;
 
-    document.getElementById("search").addEventListener("keyup", function () {
-        fetch(`/MembreEquipe/SearchUsers?term=${this.value}&teamId=${teamId}`)
-            .then(r => r.json())
-            .then(data => {
-                let ul = document.getElementById("results");
-                ul.innerHTML = "";
+    // Fonction pour afficher le message de succès
+    function showSuccess() {
+        successMessage.classList.remove('hidden');
+        setTimeout(() => {
+            successMessage.classList.add('hidden');
+        }, 5000);
+    }
 
-                if (data.length === 0) {
-                    ul.innerHTML = "<li class='p-2 text-gray-500'>Aucun résultat</li>";
-                }
+    // Fonction pour afficher le message d'erreur
+    function showError(message) {
+        errorText.textContent = message;
+        errorMessage.classList.remove('hidden');
+        setTimeout(() => {
+            errorMessage.classList.add('hidden');
+        }, 5000);
+    }
 
-                data.forEach(u => {
-                    ul.innerHTML += `
-                      <li class="p-2 hover:bg-gray-100 cursor-pointer"
-                          onclick="addMember(${u.id})">
-                          ${u.text}
-                      </li>`;
+    // Recherche avec debounce
+    searchInput.addEventListener("keyup", function () {
+        const term = this.value.trim();
+
+        clearTimeout(searchTimeout);
+
+        if (term.length < 2) {
+            resultsList.innerHTML = `
+                <li class="p-6 text-center text-gray-400">
+                    <i class="fas fa-user-plus text-4xl mb-3 block"></i>
+                    <p>Tapez au moins 2 caractères pour rechercher</p>
+                </li>`;
+            return;
+        }
+
+        searchSpinner.classList.remove('hidden');
+
+        searchTimeout = setTimeout(() => {
+            fetch(`/MembreEquipe/SearchUsers?term=${encodeURIComponent(term)}&teamId=${teamId}`)
+                .then(r => {
+                    if (!r.ok) throw new Error('Erreur de recherche');
+                    return r.json();
+                })
+                .then(data => {
+                    searchSpinner.classList.add('hidden');
+                    resultsList.innerHTML = "";
+
+                    if (data.length === 0) {
+                        resultsList.innerHTML = `
+                            <li class="p-6 text-center text-gray-400">
+                                <i class="fas fa-user-slash text-4xl mb-3 block"></i>
+                                <p>Aucun utilisateur trouvé</p>
+                            </li>`;
+                    } else {
+                        data.forEach(u => {
+                            const li = document.createElement('li');
+                            li.className = 'p-4 hover:bg-teal-50 cursor-pointer transition duration-200 flex items-center space-x-3';
+                            li.innerHTML = `
+                                <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white font-bold">${u.text.charAt(0).toUpperCase()}</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">${u.text}</p>
+                                    <p class="text-xs text-gray-500">Cliquez pour ajouter</p>
+                                </div>
+                                <i class="fas fa-plus-circle text-teal-600 text-xl"></i>
+                            `;
+                            li.onclick = () => addMember(u.id, u.text);
+                            resultsList.appendChild(li);
+                        });
+                    }
+                })
+                .catch(err => {
+                    searchSpinner.classList.add('hidden');
+                    showError('Erreur lors de la recherche. Veuillez réessayer.');
+                    console.error(err);
                 });
-            });
+        }, 500);
     });
 
-    function addMember(userId) {
+    function addMember(userId, userName) {
+        // Désactiver temporairement le clic
+        const listItems = resultsList.querySelectorAll('li');
+        listItems.forEach(li => li.style.pointerEvents = 'none');
+
+        // Récupérer le token anti-forgery
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        const formData = new FormData();
+        formData.append('teamId', teamId);
+        formData.append('userId', userId);
+        if (token) {
+            formData.append('__RequestVerificationToken', token);
+        }
+
         fetch('/MembreEquipe/AddMember', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            body: `teamId=${teamId}&userId=${userId}`
-        }).then(() => {
-            alert("Membre ajouté !");
-            window.location.reload();
+            body: formData
+        })
+        .then(r => {
+            if (!r.ok) {
+                return r.text().then(text => {
+                    throw new Error(text || 'Erreur lors de l\'ajout');
+                });
+            }
+            return r.text().then(text => {
+                try {
+                    return text ? JSON.parse(text) : {};
+                } catch {
+                    return {};
+                }
+            });
+        })
+        .then(() => {
+            showSuccess();
+            // Recharger après 2 secondes pour voir le message
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        })
+        .catch(err => {
+            showError('Erreur lors de l\'ajout du membre. Veuillez réessayer.');
+            console.error('Erreur détaillée:', err);
+            // Réactiver les clics
+            listItems.forEach(li => li.style.pointerEvents = '');
         });
     }
 </script>

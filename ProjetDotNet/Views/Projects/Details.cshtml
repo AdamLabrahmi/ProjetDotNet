@@ -1,8 +1,19 @@
 ﻿@model ProjetDotNet.Models.Projet
+@using ProjetDotNet.Helpers
+@inject ProjetDotNet.Data.AppDbContext _db
 @{
     ViewBag.Title = "Détails du projet";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var projectId = Model.ProjectID;
+
+    // droits courants : seul SiteAdmin ou Project Admin peut modifier
+    var current = AuthorizationHelper.GetCurrentUserId(User, _db);
+    var canEditProject = AuthorizationHelper.IsSiteAdmin(_db, current) || AuthorizationHelper.IsProjectAdmin(_db, current, Model.ProjectID);
+
+    var canAddProjectMember = AuthorizationHelper.CanAddMembersToProject(_db, current, Model.ProjectID);
+
+    // qui peut gérer les sprints pour ce projet (Admin ou ScrumMaster)
+    var canManageSprints = AuthorizationHelper.IsSiteAdmin(_db, current) || AuthorizationHelper.CanCreateSprint(_db, current, Model.ProjectID);
 }
 
 <div class="max-w-6xl mx-auto space-y-6">
@@ -12,9 +23,12 @@
             <p class="text-sm text-gray-500">ID: @Model.ProjectID • Organisation: @(Model.Organisation?.Nom ?? "—")</p>
         </div>
         <div class="flex items-center space-x-2">
-            <a asp-action="Edit" asp-route-id="@Model.ProjectID" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">
-                <i class="fas fa-edit mr-2"></i>Modifier
-            </a>
+            @if (canEditProject)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.ProjectID" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">
+                    <i class="fas fa-edit mr-2"></i>Modifier
+                </a>
+            }
             <a asp-action="Index" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
                 Retour
             </a>
@@ -40,10 +54,10 @@
             <div class="bg-white rounded-xl shadow p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold">Membres (@(Model.Membres?.Count() ?? 0))</h3>
-                    <a asp-controller="MembreProjet" asp-action="Add" asp-route-projectId="@projectId"
-                       class="px-3 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">
-                        <i class="fas fa-user-plus mr-1"></i>Ajouter
-                    </a>
+                    @if (canAddProjectMember)
+                    {
+                        <a asp-controller="MembreProjet" asp-action="Add" asp-route-projectId="@projectId" class="px-3 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">Ajouter</a>
+                    }
                 </div>
 
                 <div class="space-y-3">
@@ -93,7 +107,48 @@
                 </div>
             </div>
 
-            <!-- Autres sections (tâches, sprints...) si nécessaire -->
+            <!-- Sprints -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">Sprints (@(Model.Sprints?.Count() ?? 0))</h3>
+                    @if (canManageSprints)
+                    {
+                        <a asp-controller="Sprints" asp-action="Create" asp-route-projectId="@projectId" class="px-3 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Créer un sprint</a>
+                    }
+                </div>
+
+                <div class="space-y-3">
+                    @if (Model.Sprints != null && Model.Sprints.Any())
+                    {
+                        foreach (var s in Model.Sprints.OrderByDescending(sp => sp.DateDebut))
+                        {
+                            <div class="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+                                <div>
+                                    <div class="font-medium text-gray-800">@s.Nom</div>
+                                    <div class="text-xs text-gray-500">@s.DateDebut.ToString("yyyy-MM-dd") — @s.DateFin.ToString("yyyy-MM-dd")</div>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    <a asp-controller="Sprints" asp-action="Details" asp-route-id="@s.SprintID" class="px-3 py-1 text-sm text-gray-600 border rounded hover:bg-gray-50">Voir</a>
+
+                                    @* Modifier / Supprimer visibles seulement pour Admin ou ScrumMaster *@
+                                    @if (canManageSprints)
+                                    {
+                                        <a asp-controller="Sprints" asp-action="Edit" asp-route-id="@s.SprintID" class="px-3 py-1 text-sm text-teal-600 border rounded hover:bg-teal-50">Modifier</a>
+                                        <a asp-controller="Sprints" asp-action="Delete" asp-route-id="@s.SprintID" class="px-3 py-1 text-sm text-red-600 border rounded hover:bg-red-50" onclick="return confirm('Supprimer ce sprint ?');">Supprimer</a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-gray-500 italic">Aucun sprint pour ce projet.</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Autres sections (tâches...) si nécessaire -->
         </div>
 
         <aside class="space-y-6">
@@ -109,10 +164,17 @@
             <div class="bg-white rounded-xl shadow p-6">
                 <h4 class="font-semibold text-gray-800 mb-2">Actions</h4>
                 <div class="space-y-2">
-                    <a asp-action="Edit" asp-route-id="@Model.ProjectID" class="block px-4 py-2 border rounded text-center hover:bg-gray-50">Modifier le projet</a>
+                    @if (canEditProject)
+                    {
+                        <a asp-action="Edit" asp-route-id="@Model.ProjectID" class="block px-4 py-2 border rounded text-center hover:bg-gray-50">Modifier le projet</a>
+                    }
                     <a asp-controller="MembreProjet" asp-action="Add" asp-route-projectId="@projectId" class="block px-4 py-2 bg-teal-600 text-white rounded text-center hover:bg-teal-700">Ajouter un membre</a>
                 </div>
             </div>
         </aside>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

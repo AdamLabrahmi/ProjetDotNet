@@ -134,14 +134,19 @@ namespace ProjetDotNet.Data
                 entity.Property(m => m.UserID).HasColumnName("userID");
                 entity.Property(m => m.TeamID).HasColumnName("teamID");
 
-                // Utiliser des méthodes (appelées depuis des expressions) au lieu d'une switch expression directe
-                // pour éviter l'erreur "Une arborescence de l'expression ne peut pas contenir d'expression switch".
+                // Conversion robuste compatible avec les arbres d'expression :
+                // stockage : enum.ToString()
+                // lecture : si null/vides -> RoleEquipe.Membre, sinon Enum.Parse(ignoreCase: true)
                 entity.Property(m => m.Role)
                       .HasConversion(
-                          v => MapRoleToDatabaseString(v),
-                          s => MapDatabaseStringToRole(s))
+                          v => v.ToString(),
+                          s => string.IsNullOrEmpty(s)
+                                ? RoleEquipe.Membre
+                                : (RoleEquipe)Enum.Parse(typeof(RoleEquipe), s, true)
+                       )
                       .HasMaxLength(50)
                       .HasColumnName("role");
+
                 entity.Property(m => m.DateAjout).HasColumnName("dateAjout");
 
                 // relations
@@ -185,12 +190,7 @@ namespace ProjetDotNet.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            modelBuilder.Entity<MembreEquipe>()
-                          .Property(m => m.Role)
-                          .HasConversion<string>()
-                          .HasMaxLength(50);
-
-            // Si d'autres enums existent (RoleEquipe, RoleProjet, etc.), mappez-les ici de la même façon.
+           // Si d'autres enums existent (RoleEquipe, RoleProjet, etc.), mappez-les ici de la même façon.
         }
 
         // Méthodes auxiliaires utilisées par HasConversion : méthode appelée dans l'expression (évite SwitchExpression)

@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjetDotNet.Data;
+using ProjetDotNet.Helpers;
 using ProjetDotNet.Models;
+using ProjetDotNet.Models.Enums;
 
 namespace ProjetDotNet.Controllers
 {
@@ -23,8 +25,21 @@ namespace ProjetDotNet.Controllers
         // GET: /Sprints
         public IActionResult Index()
         {
-            var sprints = _context.Sprints
+            var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_context, currentUserId);
+
+            var query = _context.Sprints
+                .AsNoTracking()
                 .Include(s => s.Projet)
+                .AsQueryable();
+
+            if (!isSiteAdmin)
+            {
+                // ne montrer que les sprints dont le projet contient le user en tant que membre
+                query = query.Where(s => s.Projet.Membres.Any(mp => mp.UserID == currentUserId));
+            }
+
+            var sprints = query
                 .OrderByDescending(s => s.DateCreation)
                 .ToList();
 
@@ -53,7 +68,35 @@ namespace ProjetDotNet.Controllers
         // GET: /Sprints/Create
         public IActionResult Create()
         {
-            PopulateProjectsDropDown();
+            var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (currentUserId == 0) return Challenge();
+
+            // Construire la liste des projets que l'utilisateur peut utiliser pour créer un sprint
+            var projetsQuery = _context.Projets.AsNoTracking().AsQueryable();
+
+            if (!AuthorizationHelper.IsSiteAdmin(_context, currentUserId))
+            {
+                // garder seulement les projets dont l'utilisateur est lié via équipes où il est Admin ou ScrumMaster
+                var teamIdsUser = _context.MembreEquipes
+                    .Where(me => me.UserID == currentUserId && (me.Role == RoleEquipe.Admin || me.Role == RoleEquipe.ScrumMaster))
+                    .Select(me => me.TeamID)
+                    .Distinct()
+                    .ToList();
+
+                var orgIds = _context.Equipes
+                    .Where(e => teamIdsUser.Contains(e.TeamID))
+                    .Select(e => e.OrgID)
+                    .Distinct()
+                    .ToList();
+
+                projetsQuery = projetsQuery.Where(p => orgIds.Contains(p.OrgID));
+            }
+
+            ViewBag.Projets = projetsQuery
+                .OrderBy(p => p.Nom)
+                .Select(p => new SelectListItem { Value = p.ProjectID.ToString(), Text = p.Nom })
+                .ToList();
+
             return View("~/Views/Sprints/Create.cshtml", new Sprint
             {
                 DateDebut = DateTime.Today,
@@ -64,24 +107,35 @@ namespace ProjetDotNet.Controllers
         // POST: /Sprints/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Sprint sprint)
+        public IActionResult Create(Sprint model)
         {
-            PopulateProjectsDropDown(sprint.ProjectID);
+            int currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (currentUserId == 0) return Challenge();
+
+            // Autorisation : seul SiteAdmin ou ScrumMaster/Admin de l'orga/projet peut créer
+            if (!AuthorizationHelper.CanCreateSprint(_context, currentUserId, model.ProjectID))
+            {
+                ModelState.AddModelError(string.Empty, "Vous n'êtes pas autorisé à créer un sprint pour ce projet.");
+                PopulateProjectsDropDown();
+                return View(model);
+            }
+
+            PopulateProjectsDropDown(model.ProjectID);
 
             if (!ModelState.IsValid)
-                return View("~/Views/Sprints/Create.cshtml", sprint);
+                return View("~/Views/Sprints/Create.cshtml", model);
 
             try
             {
-                sprint.DateCreation = DateTime.Now;
-                _context.Sprints.Add(sprint);
+                model.DateCreation = DateTime.Now;
+                _context.Sprints.Add(model);
                 _context.SaveChanges();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erreur lors de la création du sprint");
                 ModelState.AddModelError(string.Empty, "Erreur serveur lors de la sauvegarde.");
-                return View("~/Views/Sprints/Create.cshtml", sprint);
+                return View("~/Views/Sprints/Create.cshtml", model);
             }
 
             return RedirectToAction(nameof(Index));

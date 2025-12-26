@@ -1,8 +1,12 @@
 ﻿@model IEnumerable<ProjetDotNet.Models.Projet>
 @using ProjetDotNet.Models.Enums
-@{
+@using ProjetDotNet.Helpers
+@inject ProjetDotNet.Data.AppDbContext _db
+    @{
     ViewBag.Title = "Projets";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var current = AuthorizationHelper.GetCurrentUserId(User, _db);
+    var canManageProjects = AuthorizationHelper.IsSiteAdmin(_db, current) || AuthorizationHelper.IsAnyTeamAdmin(_db, current);
 }
 
 <!-- En-tête avec bouton d'action -->
@@ -11,11 +15,15 @@
         <h1 class="text-3xl font-bold text-gray-800 mb-2">Projets</h1>
         <p class="text-gray-600">Gérez tous vos projets et leurs tâches</p>
     </div>
-    <a asp-controller="Projects" asp-action="Create"
-       class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg flex items-center space-x-2">
-        <i class="fas fa-plus"></i>
-        <span class="font-semibold">Créer un projet</span>
-    </a>
+    <!-- bouton créer -->
+    @if (canManageProjects)
+    {
+        <a asp-controller="Projects" asp-action="Create"
+           class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg flex items-center space-x-2">
+            <i class="fas fa-plus"></i>
+            <span class="font-semibold">Créer un projet</span>
+        </a>
+    }
 </div>
 
 <!-- Statistiques rapides -->
@@ -194,25 +202,47 @@
                                        title="Voir les détails">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@p.ProjectID"
-                                       class="text-teal-600 hover:text-teal-700 transition p-2 rounded-lg hover:bg-teal-50"
-                                       title="Modifier">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
 
-                                    @* Nouveau : bouton Ajouter membre *@
-                                    <a asp-controller="MembreProjet" asp-action="Add" asp-route-projectId="@p.ProjectID"
-                                       class="p-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                                       title="Ajouter un membre">
-                                        <i class="fas fa-user-plus"></i>
-                                    </a>
+                                    @{ 
+                                        // calculer si l'utilisateur peut ajouter un membre à CE projet
+                                        var isSiteAdminLocal = AuthorizationHelper.IsSiteAdmin(_db, current);
+                                        var hasProjectRole = _db.MembreProjets.Any(mp => 
+                                            mp.ProjectID == p.ProjectID && 
+                                            mp.UserID == current && 
+                                            (mp.Role == RoleProjet.Administrateur || mp.Role == RoleProjet.ScrumMaster || mp.Role == RoleProjet.ProductOwner)
+                                        );
+                                        var teamIdsOfOrg = _db.Equipes.Where(e => e.OrgID == p.OrgID).Select(e => e.TeamID);
+                                        var hasTeamRole = teamIdsOfOrg.Any() && _db.MembreEquipes.Any(me => 
+                                            teamIdsOfOrg.Contains(me.TeamID) && 
+                                            me.UserID == current && 
+                                            (me.Role == RoleEquipe.Admin || me.Role == RoleEquipe.ScrumMaster || me.Role == RoleEquipe.ProductOwner)
+                                        );
+                                        var canAddMember = isSiteAdminLocal || hasProjectRole || hasTeamRole;
+                                    }
 
-                                    <a asp-action="Delete" asp-route-id="@p.ProjectID"
-                                       class="text-red-600 hover:text-red-700 transition p-2 rounded-lg hover:bg-red-50"
-                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce projet ?');"
-                                       title="Supprimer">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </a>
+                                    @if (canAddMember)
+                                    {
+                                        <a asp-controller="MembreProjet" asp-action="Add" asp-route-projectId="@p.ProjectID"
+                                           class="p-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                           title="Ajouter un membre">
+                                            <i class="fas fa-user-plus"></i>
+                                        </a>
+                                    }
+
+                                    @if (canManageProjects)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@p.ProjectID"
+                                           class="text-teal-600 hover:text-teal-700 transition p-2 rounded-lg hover:bg-teal-50"
+                                           title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <a asp-action="Delete" asp-route-id="@p.ProjectID"
+                                           class="text-red-600 hover:text-red-700 transition p-2 rounded-lg hover:bg-red-50"
+                                           title="Supprimer">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -231,10 +261,13 @@ else
         </div>
         <h3 class="text-2xl font-bold text-gray-800 mb-2">Aucun projet</h3>
         <p class="text-gray-600 mb-6">Commencez par créer votre premier projet</p>
-        <a asp-controller="Projects" asp-action="Create"
-           class="inline-flex items-center space-x-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-8 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg">
-            <i class="fas fa-plus"></i>
-            <span class="font-semibold">Créer un projet</span>
-        </a>
+        @if (canManageProjects)
+        {
+            <a asp-controller="Projects" asp-action="Create"
+               class="inline-flex items-center space-x-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-8 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg">
+                <i class="fas fa-plus"></i>
+                <span class="font-semibold">Créer un projet</span>
+            </a>
+        }
     </div>
 }

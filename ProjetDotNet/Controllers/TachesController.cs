@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjetDotNet.Data;
+using ProjetDotNet.Helpers;
 using ProjetDotNet.Models;
 using ProjetDotNet.Models.Enums;
 
@@ -26,11 +27,24 @@ namespace ProjetDotNet.Controllers
         // GET: /Taches
         public IActionResult Index()
         {
-            var taches = _context.Taches
+            var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_context, currentUserId);
+
+            var query = _context.Taches
+                .AsNoTracking()
                 .Include(t => t.Projet)
                 .Include(t => t.Sprint)
                 .Include(t => t.Assignee)
                 .Include(t => t.Createur)
+                .AsQueryable();
+
+            if (!isSiteAdmin)
+            {
+                // uniquement les tâches des projets où l'utilisateur est membre
+                query = query.Where(t => t.Projet.Membres.Any(mp => mp.UserID == currentUserId));
+            }
+
+            var taches = query
                 .OrderByDescending(t => t.DateCreation)
                 .ToList();
 
@@ -41,6 +55,7 @@ namespace ProjetDotNet.Controllers
         public IActionResult Details(int id)
         {
             var tache = _context.Taches
+                .AsNoTracking()
                 .Include(t => t.Projet)
                 .Include(t => t.Sprint)
                 .Include(t => t.Assignee)
@@ -54,26 +69,61 @@ namespace ProjetDotNet.Controllers
         // GET: /Taches/Create
         public IActionResult Create()
         {
-            PopulateProjectsDropDown();
+            var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (currentUserId == 0) return Challenge();
+
+            // Construire la liste des projets que l'utilisateur peut utiliser pour créer une tâche
+            var projetsQuery = _context.Projets.AsNoTracking().AsQueryable();
+
+            if (!AuthorizationHelper.IsSiteAdmin(_context, currentUserId))
+            {
+                // projets où l'utilisateur a rôle projet autorisé OR est dans une équipe autorisée
+                var projectIdsFromProjectRole = _context.MembreProjets
+                    .Where(mp => mp.UserID == currentUserId &&
+                                 (mp.Role == RoleProjet.ProductOwner || mp.Role == RoleProjet.ScrumMaster || mp.Role == RoleProjet.Testeur))
+                    .Select(mp => mp.ProjectID)
+                    .Distinct();
+
+                var teamIdsUser = _context.MembreEquipes
+                    .Where(me => me.UserID == currentUserId)
+                    .Select(me => me.TeamID)
+                    .Distinct()
+                    .ToList();
+
+                var orgIdsFromTeams = _context.Equipes
+                    .Where(e => teamIdsUser.Contains(e.TeamID))
+                    .Select(e => e.OrgID)
+                    .Distinct();
+
+                var projectIdsFromOrga = _context.Projets
+                    .Where(p => orgIdsFromTeams.Contains(p.OrgID))
+                    .Select(p => p.ProjectID);
+
+                var allowedProjectIds = projectIdsFromProjectRole
+                    .Union(projectIdsFromOrga)
+                    .Distinct();
+
+                projetsQuery = projetsQuery.Where(p => allowedProjectIds.Contains(p.ProjectID));
+            }
+
+            ViewBag.Projets = projetsQuery
+                .OrderBy(p => p.Nom)
+                .Select(p => new SelectListItem { Value = p.ProjectID.ToString(), Text = p.Nom })
+                .ToList();
+
+            // Préparer autres dropdowns (vide pour sprint/assignee ; chargés via JS)
             PopulateSprintsDropDown();
             PopulateUsersDropDown();
             PopulateEnumsDropDowns();
 
-            // Vérifier si des projets existent
+            // Vérifier si des projets existent pour l'utilisateur
             if (!((System.Collections.Generic.List<SelectListItem>)ViewBag.Projets).Any())
             {
-                ModelState.AddModelError(string.Empty, "Aucun projet disponible. Créez un projet d'abord.");
+                ModelState.AddModelError(string.Empty, "Aucun projet disponible pour créer une tâche.");
                 return View("~/Views/Taches/Create.cshtml", new Tache());
             }
 
-            var userId = GetCurrentUserId();
-            if (userId == 0)
-            {
-                // Rediriger vers login si utilisateur non identifié
-                return Challenge();
-            }
-
-            var model = new Tache { DateCreation = DateTime.Now, CreateurID = userId };
+            var model = new Tache { DateCreation = DateTime.Now, CreateurID = currentUserId };
             return View("~/Views/Taches/Create.cshtml", model);
         }
 
@@ -82,10 +132,13 @@ namespace ProjetDotNet.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(Tache tache)
         {
+            int currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (currentUserId == 0) return Challenge();
+
             // 1) Assurer que CreateurID est renseigné AVANT la validation
             if (tache.CreateurID == 0)
             {
-                tache.CreateurID = GetCurrentUserId();
+                tache.CreateurID = currentUserId;
             }
 
             // Si ModelState contient une ancienne erreur sur CreateurID, la retirer pour re-validation
@@ -106,7 +159,12 @@ namespace ProjetDotNet.Controllers
                 ModelState.AddModelError("ProjectID", "Veuillez sélectionner un projet.");
             }
 
-            // 4) Si encore invalide, logger et retourner la vue (ModelState contient erreurs visibles en vue)
+            // ----- AUTORISATION: seul SiteAdmin ou rôles permis peuvent créer une tâche pour ce projet -----
+            if (!tache.ProjectID.HasValue || !AuthorizationHelper.CanCreateTache(_context, currentUserId, tache.ProjectID.Value))
+            {
+                ModelState.AddModelError(string.Empty, "Vous n'êtes pas autorisé à créer une tâche pour ce projet.");
+            }
+
             if (!ModelState.IsValid)
             {
                 foreach (var entry in ModelState)
@@ -296,16 +354,22 @@ namespace ProjetDotNet.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetMembresByEquipe(int equipeId)
+        public IActionResult GetMembresByEquipe(int equipeId, bool excludeLeads = false)
         {
-            var membres = _context.MembreEquipes
-                .Where(me => me.TeamID == equipeId)
+            var query = _context.MembreEquipes
+                .Where(me => me.TeamID == equipeId);
+
+            if (excludeLeads)
+            {
+                // exclure ScrumMaster et ProductOwner
+                query = query.Where(me => me.Role != RoleEquipe.ScrumMaster && me.Role != RoleEquipe.ProductOwner);
+            }
+
+            var membres = query
                 .Select(me => new
                 {
-                    me.Utilisateur.UserID,
-                    Nom = string.IsNullOrEmpty(me.Utilisateur.Nom)
-                        ? me.Utilisateur.Email
-                        : me.Utilisateur.Nom
+                    UserID = me.Utilisateur.UserID,
+                    Nom = string.IsNullOrEmpty(me.Utilisateur.Nom) ? me.Utilisateur.Email : me.Utilisateur.Nom
                 })
                 .ToList();
 

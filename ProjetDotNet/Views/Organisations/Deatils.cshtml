@@ -1,0 +1,177 @@
+﻿@model ProjetDotNet.Models.Organisations
+@using ProjetDotNet.Helpers
+@using ProjetDotNet.Models
+@inject ProjetDotNet.Data.AppDbContext _db
+@{
+    ViewBag.Title = "Détails de l'organisation";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var current = AuthorizationHelper.GetCurrentUserId(User, _db);
+    var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_db, current);
+    // propriétaire / admin de l'organisation
+    var isOrgAdmin = Model?.AdminID == current;
+    var canManageOrg = isSiteAdmin || isOrgAdmin;
+}
+
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">@Model.Nom</h1>
+            <p class="text-sm text-gray-500 mt-1">@(!string.IsNullOrEmpty(Model.Description) ? Model.Description : "Aucune description")</p>
+            <p class="text-xs text-gray-400 mt-2">ID: @Model.OrgID • Créée: @Model.DateCreation.ToString("dd MMMM yyyy")</p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            @if (canManageOrg)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.OrgID" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">
+                    <i class="fas fa-edit mr-2"></i>Modifier
+                </a>
+
+                <form asp-action="Delete" method="post" class="inline-block" onsubmit="return confirm('Voulez‑vous vraiment supprimer cette organisation ? Cette action est irréversible.');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="OrgID" />
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ml-2">
+                        <i class="fas fa-trash-alt mr-2"></i>Supprimer
+                    </button>
+                </form>
+            }
+            <a asp-action="Index" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Retour</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Aperçu</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-500">Équipes</p>
+                        <p class="text-2xl font-bold">@Model.Equipes?.Count() ?? 0</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-500">Projets</p>
+                        <p class="text-2xl font-bold">@Model.Projets?.Count() ?? 0</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded">
+                        <p class="text-sm text-gray-500">Admin</p>
+                        <p class="text-sm text-gray-800">@Model.Admin?.Utilisateur?.Nom ?? Model.Admin?.Utilisateur?.Email ?? "—"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">Équipes (@(Model.Equipes?.Count() ?? 0))</h3>
+                    @if (canManageOrg)
+                    {
+                        <a asp-controller="Equipes" asp-action="Create" asp-route-orgId="@Model.OrgID" class="px-3 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">
+                            <i class="fas fa-plus mr-1"></i>Nouvelle équipe
+                        </a>
+                    }
+                </div>
+
+                @if (Model.Equipes != null && Model.Equipes.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var e in Model.Equipes.OrderBy(t => t.Nom))
+                        {
+                            <div class="flex items-center justify-between p-3 border rounded">
+                                <div>
+                                    <a asp-controller="Equipes" asp-action="Details" asp-route-id="@e.TeamID" class="font-medium text-gray-800">@e.Nom</a>
+                                    <div class="text-xs text-gray-500">@(!string.IsNullOrEmpty(e.Description) ? e.Description : "Aucune description")</div>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    <a asp-controller="Equipes" asp-action="Details" asp-route-id="@e.TeamID" class="text-gray-600 px-3 py-1 rounded hover:bg-gray-50">Voir</a>
+
+                                    @if (canManageOrg)
+                                    {
+                                        <a asp-controller="Equipes" asp-action="Edit" asp-route-id="@e.TeamID" class="text-teal-600 px-3 py-1 rounded hover:bg-teal-50">Modifier</a>
+                                        <a asp-controller="Equipes" asp-action="Delete" asp-route-id="@e.TeamID" class="text-red-600 px-3 py-1 rounded hover:bg-red-50" onclick="return confirm('Supprimer cette équipe ?');">Supprimer</a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-gray-500 italic">Aucune équipe pour cette organisation.</div>
+                }
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">Projets (@(Model.Projets?.Count() ?? 0))</h3>
+                    @if (canManageOrg)
+                    {
+                        <a asp-controller="Projects" asp-action="Create" asp-route-orgId="@Model.OrgID" class="px-3 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">
+                            <i class="fas fa-plus mr-1"></i>Nouveau projet
+                        </a>
+                    }
+                </div>
+
+                @if (Model.Projets != null && Model.Projets.Any())
+                {
+                    <div class="space-y-3">
+                        @foreach (var p in Model.Projets.OrderBy(p => p.Nom))
+                        {
+                            <div class="flex items-center justify-between p-3 border rounded">
+                                <div>
+                                    <a asp-controller="Projects" asp-action="Details" asp-route-id="@p.ProjectID" class="font-medium text-gray-800">@p.Nom</a>
+                                    <div class="text-xs text-gray-500">@p.CleProjet ?? "-"</div>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    <a asp-controller="Projects" asp-action="Details" asp-route-id="@p.ProjectID" class="text-gray-600 px-3 py-1 rounded hover:bg-gray-50">Voir</a>
+
+                                    @if (canManageOrg)
+                                    {
+                                        <a asp-controller="Projects" asp-action="Edit" asp-route-id="@p.ProjectID" class="text-teal-600 px-3 py-1 rounded hover:bg-teal-50">Modifier</a>
+                                        <a asp-controller="Projects" asp-action="Delete" asp-route-id="@p.ProjectID" class="text-red-600 px-3 py-1 rounded hover:bg-red-50" onclick="return confirm('Supprimer ce projet ?');">Supprimer</a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-gray-500 italic">Aucun projet pour cette organisation.</div>
+                }
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="bg-white rounded-xl shadow p-6">
+                <h4 class="font-semibold text-gray-800 mb-2">Résumé</h4>
+                <div class="text-sm text-gray-600">
+                    <div class="mb-2"><strong>ID :</strong> @Model.OrgID</div>
+                    <div class="mb-2"><strong>Admin :</strong> @Model.Admin?.Utilisateur?.Nom ?? Model.Admin?.Utilisateur?.Email ?? "—"</div>
+                    <div class="mb-2"><strong>Équipes :</strong> @(Model.Equipes?.Count() ?? 0)</div>
+                    <div class="mb-2"><strong>Projets :</strong> @(Model.Projets?.Count() ?? 0)</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-6">
+                <h4 class="font-semibold text-gray-800 mb-2">Actions</h4>
+                <div class="space-y-2">
+                    @if (canManageOrg)
+                    {
+                        <a asp-action="Edit" asp-route-id="@Model.OrgID" class="block px-4 py-2 border rounded text-center hover:bg-gray-50">Modifier l'organisation</a>
+                        <form asp-action="Delete" method="post" onsubmit="return confirm('Supprimer cette organisation ? Cette action est irréversible.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="OrgID" />
+                            <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded">Supprimer définitivement</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="text-sm text-gray-500">Vous n'avez pas les droits pour modifier cette organisation.</div>
+                    }
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>

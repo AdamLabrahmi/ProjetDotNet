@@ -183,7 +183,8 @@
                 return;
             }
 
-            const res = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}`);
+            // Demander la liste sans ScrumMaster ni ProductOwner
+            const res = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}&excludeLeads=true`);
             const membres = await res.json();
 
             assigneeSelect.innerHTML = `<option value="">-- Aucun --</option>`;

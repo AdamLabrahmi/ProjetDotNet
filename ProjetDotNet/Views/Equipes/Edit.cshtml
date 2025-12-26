@@ -20,7 +20,7 @@
                 <input type="hidden" asp-for="TeamID" />
                 <input type="hidden" asp-for="OrgID" />
 
-                @* Bloc résumé de validation - Affiché uniquement s'il y a des erreurs *@
+                @* Bloc résumé de validation *@
                 @if (!ViewData.ModelState.IsValid)
                 {
                     <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
@@ -80,60 +80,7 @@
     <div class="space-y-6">
 
         <!-- Carte d'informations -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex items-center space-x-3 mb-4">
-                <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-info-circle text-teal-600 text-lg"></i>
-                </div>
-                <h3 class="text-lg font-bold text-gray-800">Informations</h3>
-            </div>
-            <div class="space-y-3 text-sm text-gray-600">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-id-badge text-teal-600"></i>
-                    <span class="font-medium">ID:</span>
-                    <span class="text-gray-800">@Model.TeamID</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-building text-teal-600"></i>
-                    <span class="font-medium">Organisation ID:</span>
-                    <span class="text-gray-800">@Model.OrgID</span>
-                </div>
-                @* @if (Model.DateCreation.HasValue)
-                {
-                    <div class="flex items-start space-x-2">
-                        <i class="fas fa-calendar-plus text-teal-600 mt-0.5"></i>
-                        <div>
-                            <span class="font-medium">Créée le:</span>
-                            <span class="text-gray-800 block">@Model.DateCreation.Value.ToString("dd MMMM yyyy")</span>
-                        </div>
-                    </div>
-                } *@
-            </div>
-        </div>
-
-        <!-- Carte membres -->
-        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
-            <div class="flex items-center space-x-3 mb-4">
-                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-users text-white text-lg"></i>
-                </div>
-                <h3 class="text-lg font-bold text-gray-800">Membres</h3>
-            </div>
-            <div class="bg-white rounded-lg p-4 mb-3">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-2xl font-bold text-gray-800">0</span>
-                    <i class="fas fa-user-friends text-teal-600 text-xl"></i>
-                </div>
-                <p class="text-sm text-gray-600">Membres actifs dans cette équipe</p>
-            </div>
-            <a href="#" class="w-full bg-teal-600 text-white text-center py-2 rounded-lg hover:bg-teal-700 transition flex items-center justify-center space-x-2">
-                <i class="fas fa-user-plus"></i>
-                <span class="font-medium">Gérer les membres</span>
-            </a>
-        </div>
-
-        <!-- Carte d'avertissement -->
-        <div class="bg-amber-50 rounded-xl shadow-lg p-6 border border-amber-200">
+        <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-red-200">
             <div class="flex items-center space-x-3 mb-3">
                 <i class="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
                 <h3 class="font-bold text-gray-800">Attention</h3>
@@ -143,8 +90,8 @@
             </p>
         </div>
 
-        <!-- Carte actions dangereuses -->
-        <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-red-200">
+        <!-- Carte membres -->
+        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
             <div class="flex items-center space-x-3 mb-4">
                 <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                     <i class="fas fa-shield-alt text-red-600 text-lg"></i>
@@ -155,12 +102,40 @@
                 Supprimer cette équipe retirera tous les membres et désassociera les projets liés.
             </p>
             <a asp-action="Delete" asp-route-id="@Model.TeamID"
-               onclick="return confirm('⚠️ ATTENTION : Êtes-vous sûr de vouloir supprimer cette équipe ?\n\nTous les membres seront retirés et les projets désassociés.');"
-               class="w-full bg-red-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200 flex items-center justify-center space-x-2">
+               class="w-full bg-red-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-red-700 transition duration-200 flex items-center justify-center space-x-2">
                 <i class="fas fa-trash-alt"></i>
                 <span>Supprimer l'équipe</span>
             </a>
         </div>
+
+        <!-- Carte d'avertissement -->
+        @* <div class="bg-amber-50 rounded-xl shadow-lg p-6 border border-amber-200">
+            <div class="flex items-center space-x-3 mb-3">
+                <i class="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
+                <h3 class="font-bold text-gray-800">Attention</h3>
+            </div>
+            <p class="text-sm text-gray-700">
+                Les modifications apportées affecteront tous les membres et projets associés à cette équipe.
+            </p>
+        </div> *@
+
+        <!-- Carte actions dangereuses -->
+        @* <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-red-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-red-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Zone dangereuse</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                Supprimer cette équipe retirera tous les membres et désassociera les projets liés.
+            </p>
+            <a asp-action="Delete" asp-route-id="@Model.TeamID"
+               class="w-full bg-red-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-red-700 transition duration-200 flex items-center justify-center space-x-2">
+                <i class="fas fa-trash-alt"></i>
+                <span>Supprimer l'équipe</span>
+            </a>
+        </div> *@
     </div>
 </div>
 

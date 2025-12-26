@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjetDotNet.Data;
+using ProjetDotNet.Helpers;
 using ProjetDotNet.Models;
 using ProjetDotNet.Models.Enums;
 
@@ -36,43 +37,84 @@ namespace ProjetDotNet.Controllers
 
         public IActionResult Index()
         {
-            var projets = _context.Projets
+            // récupérer user courant + droit site admin
+            var current = AuthorizationHelper.GetCurrentUserId(User, _context);
+            var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_context, current);
+
+            // requête de base incluant organisation et membres/utilisateurs
+            var query = _context.Projets
+                .AsNoTracking()
                 .Include(p => p.Organisation)
-                .Include(p => p.Membres)                    
+                .Include(p => p.Membres)
                     .ThenInclude(mp => mp.Utilisateur)
+                .AsQueryable();
+
+            if (!isSiteAdmin)
+            {
+                // ne conserver que les projets où l'utilisateur est membre
+                query = query.Where(p => p.Membres.Any(mp => mp.UserID == current));
+            }
+
+            var projets = query
                 .OrderByDescending(p => p.DateCreation)
                 .ToList();
+
+            if (!isSiteAdmin && (projets == null || projets.Count == 0))
+            {
+                ViewBag.InfoMessage = "Vous n'êtes affecté à aucun projet pour le moment.";
+            }
+
             return View("~/Views/Projects/Index.cshtml", projets);
         }
 
 
 
-        // GET: /Projects/Details/5
         //public IActionResult Details(int id)
         //{
         //    var projet = _context.Projets
+        //        .AsNoTracking()
         //        .Include(p => p.Organisation)
+        //        .Include(p => p.Membres!)
+        //            .ThenInclude(mp => mp.Utilisateur)
+        //        .Include(p => p.Sprints)
+        //        .Include(p => p.Taches)
+        //            .ThenInclude(t => t.Assignee)
         //        .FirstOrDefault(p => p.ProjectID == id);
+
         //    if (projet == null) return NotFound();
+
         //    return View("~/Views/Projects/Details.cshtml", projet);
         //}
 
+
+
         public IActionResult Details(int id)
         {
-            var projet = _context.Projets
+            var tache = _context.Taches
                 .AsNoTracking()
-                .Include(p => p.Organisation)
-                .Include(p => p.Membres)                    
-                    .ThenInclude(mp => mp.Utilisateur)
-                .FirstOrDefault(p => p.ProjectID == id);
-            if (projet == null) return NotFound();
-            return View("~/Views/Projects/Details.cshtml", projet);
+                .Include(t => t.Projet)
+                .Include(t => t.Sprint)
+                .Include(t => t.Assignee)
+                .Include(t => t.Createur)
+                .FirstOrDefault(t => t.TacheID == id);
+
+            if (tache == null) return NotFound();
+            return View("~/Views/Taches/Details.cshtml", tache);
         }
 
 
+
         // GET: /Projects/Create
+        // GET Create
         public IActionResult Create()
         {
+            int current = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (current == 0) return Challenge();
+
+            // Autorisé si SiteAdmin OU Admin d'au moins une équipe
+            bool allowed = AuthorizationHelper.IsSiteAdmin(_context, current) || AuthorizationHelper.IsAnyTeamAdmin(_context, current);
+            if (!allowed) return Forbid();
+
             PopulateOrganisationDropDown();
             PopulateStatutDropDown();
             var model = new Projet { DateDebut = DateTime.Today, DateFin = DateTime.Today.AddMonths(3) };
@@ -170,10 +212,17 @@ namespace ProjetDotNet.Controllers
         }
 
         // POST: /Projects/Delete/5
+        // POST DeleteConfirmed
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
         {
+            int current = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (current == 0) return Challenge();
+
+            bool allowed = AuthorizationHelper.IsSiteAdmin(_context, current) || AuthorizationHelper.IsAnyTeamAdmin(_context, current);
+            if (!allowed) return Forbid();
+
             var projet = _context.Projets.Find(id);
             if (projet == null) return NotFound();
 

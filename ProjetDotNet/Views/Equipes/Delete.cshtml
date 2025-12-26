@@ -73,7 +73,7 @@
                 </div>
             }
 
-            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+            @* <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
                 <div>
                     <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ID Équipe</label>
                     <p class="text-gray-800 font-medium">@Model.TeamID</p>
@@ -82,14 +82,7 @@
                     <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Organisation</label>
                     <p class="text-gray-800 font-medium">ID: @Model.OrgID</p>
                 </div>
-                @* @if (Model.DateCreation.HasValue)
-                {
-                    <div>
-                        <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Créée le</label>
-                        <p class="text-gray-800 font-medium">@Model.DateCreation.Value.ToString("dd/MM/yyyy")</p>
-                    </div>
-                } *@
-            </div>
+            </div> *@
         </div>
     </div>
 
@@ -121,7 +114,7 @@
                 <button type="submit"
                         id="deleteButton"
                         disabled
-                        class="flex-1 bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 transition duration-200 shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300 flex items-center justify-center space-x-2">
+                        class="flex-1 bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2">
                     <i class="fas fa-trash-alt"></i>
                     <span>Supprimer définitivement</span>
                 </button>
@@ -147,18 +140,38 @@
 </div>
 
 <script>
-    // Validation du nom pour activer le bouton de suppression
-    const confirmInput = document.getElementById('confirmName');
-    const deleteButton = document.getElementById('deleteButton');
-    const expectedName = '@Model.Nom';
+    (function () {
+        const confirmInput = document.getElementById('confirmName');
+        const deleteButton = document.getElementById('deleteButton');
 
-    confirmInput.addEventListener('input', function() {
-        if (this.value === expectedName) {
-            deleteButton.disabled = false;
-            deleteButton.classList.remove('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
-        } else {
-            deleteButton.disabled = true;
-            deleteButton.classList.add('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+        // Sérialisation JSON pour échapper correctement le nom côté serveur
+        const expectedName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Nom ?? ""));
+
+        function normalize(s) {
+            return (s || "").trim().toLowerCase();
         }
-    });
+
+        function validateInput() {
+            const val = normalize(confirmInput.value);
+            const exp = normalize(expectedName);
+
+            if (val === exp && exp !== "") {
+                deleteButton.disabled = false;
+                deleteButton.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed');
+                deleteButton.classList.remove('opacity-50');
+            } else {
+                deleteButton.disabled = true;
+                deleteButton.classList.add('opacity-50');
+            }
+        }
+
+        if (confirmInput) {
+            confirmInput.addEventListener('input', validateInput);
+            confirmInput.addEventListener('change', validateInput);
+            confirmInput.addEventListener('paste', function () { setTimeout(validateInput, 10); });
+            confirmInput.addEventListener('keyup', validateInput);
+            // validate once in case browser autofill
+            setTimeout(validateInput, 50);
+        }
+    })();
 </script>

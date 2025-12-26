@@ -1,8 +1,20 @@
 ﻿@model IEnumerable<ProjetDotNet.Models.Tache>
 @using ProjetDotNet.Models.Enums
+@using ProjetDotNet.Helpers
+@inject ProjetDotNet.Data.AppDbContext _db
 @{
     ViewBag.Title = "Tâches";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var current = AuthorizationHelper.GetCurrentUserId(User, _db);
+    var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_db, current);
+
+    // Peut créer une tâche globalement : site admin, ou rôle projet autorisé, ou rôle équipe autorisé
+    var canCreateAnyTache = isSiteAdmin
+        || _db.MembreProjets.Any(mp => mp.UserID == current &&
+            (mp.Role == RoleProjet.ProductOwner || mp.Role == RoleProjet.ScrumMaster || mp.Role == RoleProjet.Testeur))
+        || _db.MembreEquipes.Any(me => me.UserID == current &&
+            (me.Role == RoleEquipe.ScrumMaster || me.Role == RoleEquipe.ProductOwner || me.Role == RoleEquipe.QA));
 }
 
 <div class="max-w-6xl mx-auto">
@@ -11,7 +23,11 @@
             <h1 class="text-2xl font-bold">Tâches</h1>
             <p class="text-gray-600">Liste des tâches</p>
         </div>
-        <a asp-action="Create" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700">Nouvelle tâche</a>
+
+        @if (canCreateAnyTache)
+        {
+            <a asp-action="Create" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700">Nouvelle tâche</a>
+        }
     </div>
 
     @if (Model != null && Model.Any())
@@ -33,6 +49,28 @@
                     <tbody class="divide-y">
                         @foreach (var t in Model)
                         {
+                            // permission par tâche : seul SiteAdmin ou rôle Admin / ScrumMaster / ProductOwner peuvent modifier/supprimer
+                            var projectId = t.ProjectID ?? 0;
+
+                            // rôle explicite sur le projet
+                            var isProjectRoleAllowed = _db.MembreProjets.Any(mp =>
+                                mp.ProjectID == projectId &&
+                                mp.UserID == current &&
+                                (mp.Role == RoleProjet.Administrateur || mp.Role == RoleProjet.ScrumMaster || mp.Role == RoleProjet.ProductOwner)
+                            );
+
+                            // rôle sur une équipe de l'organisation du projet
+                            var orgId = _db.Projets.Where(p => p.ProjectID == projectId).Select(p => p.OrgID).FirstOrDefault();
+                            var teamIdsOfOrg = _db.Equipes.Where(e => e.OrgID == orgId).Select(e => e.TeamID);
+                            var isTeamRoleAllowed = teamIdsOfOrg.Any()
+                                && _db.MembreEquipes.Any(me =>
+                                    teamIdsOfOrg.Contains(me.TeamID) &&
+                                    me.UserID == current &&
+                                    (me.Role == RoleEquipe.Admin || me.Role == RoleEquipe.ScrumMaster || me.Role == RoleEquipe.ProductOwner)
+                            );
+
+                            var canManageThisTask = isSiteAdmin || isProjectRoleAllowed || isTeamRoleAllowed;
+
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3">@t.Titre</td>
                                 <td class="px-4 py-3">@t.Projet?.Nom ?? "—"</td>
@@ -42,8 +80,13 @@
                                 <td class="px-4 py-3">@t.Priorite</td>
                                 <td class="px-4 py-3 text-right">
                                     <a asp-action="Details" asp-route-id="@t.TacheID" class="text-gray-600 hover:text-teal-600 mr-2">Voir</a>
-                                    <a asp-action="Edit" asp-route-id="@t.TacheID" class="text-teal-600 hover:text-teal-700 mr-2">Modifier</a>
-                                    <a asp-action="Delete" asp-route-id="@t.TacheID" class="text-red-600 hover:text-red-700">Supprimer</a>
+
+                                    @* Montrer Modifier / Supprimer seulement aux rôles autorisés *@
+                                    @if (canManageThisTask)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@t.TacheID" class="text-teal-600 hover:text-teal-700 mr-2">Modifier</a>
+                                        <a asp-action="Delete" asp-route-id="@t.TacheID" class="text-red-600 hover:text-red-700">Supprimer</a>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -56,7 +99,10 @@
     {
         <div class="bg-white rounded-xl p-8 text-center shadow">
             <p class="text-gray-600">Aucune tâche trouvée.</p>
-            <a asp-action="Create" class="mt-4 inline-block bg-teal-600 text-white px-4 py-2 rounded-lg">Créer une tâche</a>
+            @if (canCreateAnyTache)
+            {
+                <a asp-action="Create" class="mt-4 inline-block bg-teal-600 text-white px-4 py-2 rounded-lg">Créer une tâche</a>
+            }
         </div>
     }
 </div>

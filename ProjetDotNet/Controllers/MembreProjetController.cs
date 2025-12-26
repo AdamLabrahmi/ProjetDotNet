@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjetDotNet.Data;
+using ProjetDotNet.Helpers;
 using ProjetDotNet.Models;
 using ProjetDotNet.Models.Enums;
 
@@ -18,6 +19,12 @@ namespace ProjetDotNet.Controllers
         // GET: /MembreProjet/Add?projectId=5
         public IActionResult Add(int projectId)
         {
+            var current = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (current == 0) return Challenge();
+
+            if (!AuthorizationHelper.CanAddMembersToProject(_context, current, projectId))
+                return Forbid();
+
             ViewBag.ProjectId = projectId;
             return View("~/Views/MembreProjet/AddMember.cshtml");
         }
@@ -26,6 +33,13 @@ namespace ProjetDotNet.Controllers
         [HttpGet]
         public IActionResult SearchUsers(string term, int projectId)
         {
+
+            var current = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (current == 0) return Forbid();
+
+            if (!AuthorizationHelper.CanAddMembersToProject(_context, current, projectId))
+                return Forbid();
+
             if (string.IsNullOrWhiteSpace(term))
                 return Json(new List<object>());
 
@@ -55,6 +69,12 @@ namespace ProjetDotNet.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult AddMember([FromForm] int projectId, [FromForm] int userId)
         {
+            var current = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (current == 0) return Forbid();
+
+            if (!AuthorizationHelper.CanAddMembersToProject(_context, current, projectId))
+                return Forbid();
+
             bool alreadyExists = _context.MembreProjets
                 .Any(mp => mp.ProjectID == projectId && mp.UserID == userId);
 
@@ -141,8 +161,29 @@ namespace ProjetDotNet.Controllers
             var membre = _context.MembreProjets.SingleOrDefault(mp => mp.ProjectID == projectId && mp.UserID == userId);
             if (membre == null) return NotFound();
 
+            // 1) Supprimer la relation membre-projet
             _context.MembreProjets.Remove(membre);
-            _context.SaveChanges();
+
+            // 2) Détacher les assignations de tâches du projet pour cet utilisateur
+            var tasksToUnassign = _context.Taches
+                .Where(t => t.ProjectID == projectId && t.AssigneeID == userId)
+                .ToList();
+
+            foreach (var t in tasksToUnassign)
+            {
+                t.AssigneeID = null;
+            }
+
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.GetBaseException().Message;
+                // optional: logger si injecté
+                return BadRequest(inner);
+            }
 
             return RedirectToAction("Details", "Projects", new { id = projectId });
         }

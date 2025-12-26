@@ -153,6 +153,7 @@
         }
 
         async function loadSprints(projectId) {
+            if (!projectId) { reset(sprintSelect, "-- Aucun --"); return; }
             reset(sprintSelect, "Chargement...");
             const res = await fetch(`/Taches/GetSprintsByProject?projectId=${projectId}`);
             const data = await res.json();
@@ -164,6 +165,7 @@
         }
 
         async function loadEquipes(projectId) {
+            if (!projectId) { reset(equipeSelect, "-- Choisir équipe --"); return; }
             reset(equipeSelect, "Chargement...");
             const res = await fetch(`/Taches/GetEquipesByProjet?projectId=${projectId}`);
             const data = await res.json();
@@ -174,13 +176,33 @@
             equipeSelect.disabled = false;
         }
 
+        // Charge les membres en excluant ScrumMaster et ProductOwner.
+        // Si l'assignee actuel est exclu, on recharge la liste complète pour inclure la sélection existante.
         async function loadMembres(equipeId) {
+            if (!equipeId) { reset(assigneeSelect, "-- Aucun --"); return; }
             reset(assigneeSelect, "Chargement...");
-            const res = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}`);
-            const data = await res.json();
+            // 1) essayer sans les leads
+            const res = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}&excludeLeads=true`);
+            let data = await res.json();
+            let containsSelected = data.some(m => String(m.userID) === String(selectedAssignee));
+
+            // 2) si selection existante (édition) et non présente, récupérer la liste complète pour inclure l'assignee
+            if (selectedAssignee && !containsSelected) {
+                const fullRes = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}&excludeLeads=false`);
+                const fullData = await fullRes.json();
+                // fusionner : garder ordre des non-leads puis assurer présence du selected
+                const merged = [...data];
+                const selectedItem = fullData.find(m => String(m.userID) === String(selectedAssignee));
+                if (selectedItem) {
+                    // si absent, l'ajouter en tête pour visibilité
+                    merged.unshift(selectedItem);
+                }
+                data = merged;
+            }
+
             assigneeSelect.innerHTML = `<option value="">-- Aucun --</option>`;
             data.forEach(m => {
-                assigneeSelect.innerHTML += `<option value="${m.userID}" ${m.userID == selectedAssignee ? "selected" : ""}>${m.nom}</option>`;
+                assigneeSelect.innerHTML += `<option value="${m.userID}" ${String(m.userID) === String(selectedAssignee) ? "selected" : ""}>${m.nom}</option>`;
             });
             assigneeSelect.disabled = false;
         }
@@ -200,6 +222,10 @@
             if (projectSelect.value) {
                 loadSprints(projectSelect.value);
                 loadEquipes(projectSelect.value);
+                // si une équipe est déjà sélectionnée (cas postback), déclencher le chargement des membres
+                if (equipeSelect.value) {
+                    loadMembres(equipeSelect.value);
+                }
             }
         });
     </script>

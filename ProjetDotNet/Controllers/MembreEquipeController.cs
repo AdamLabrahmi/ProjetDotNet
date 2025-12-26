@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using ProjetDotNet.Controllers;
 using ProjetDotNet.Data;
+using ProjetDotNet.Helpers;
 using ProjetDotNet.Models;
 using ProjetDotNet.Models.Enums;
+
 
 namespace ProjetDotNet.Controllers
 {
@@ -16,9 +19,20 @@ namespace ProjetDotNet.Controllers
             _context = context;
         }
 
-        // 1️⃣ Page Ajouter membre
+        private int GetCurrentUserId()
+        {
+            return AuthorizationHelper.GetCurrentUserId(User, _context);
+        }
+
+        // 1️⃣ Page Ajouter membre (GET)
         public IActionResult Add(int teamId)
         {
+            var current = GetCurrentUserId();
+            if (current == 0) return Challenge();
+
+            if (!AuthorizationHelper.CanAddMembersToTeam(_context, current, teamId))
+                return Forbid();
+
             ViewBag.TeamId = teamId;
             return View();
         }
@@ -27,10 +41,17 @@ namespace ProjetDotNet.Controllers
         [HttpGet]
         public IActionResult SearchUsers(string term, int teamId)
         {
+            var current = GetCurrentUserId();
+            if (current == 0) return Forbid();
+
+            if (!AuthorizationHelper.CanAddMembersToTeam(_context, current, teamId))
+            {
+                return Forbid();
+            }
+
             if (string.IsNullOrWhiteSpace(term))
                 return Json(new List<object>());
 
-            // éviter les déréférencements nuls dans les expressions LINQ
             var users = _context.Utilisateurs
                 .Where(u =>
                     (
@@ -52,10 +73,18 @@ namespace ProjetDotNet.Controllers
             return Json(users);
         }
 
-        // 3️⃣ Ajouter un membre existant
+        // 3️⃣ Ajouter un membre existant (POST)
         [HttpPost]
         public IActionResult AddMember(int teamId, int userId)
         {
+            var current = GetCurrentUserId();
+            if (current == 0) return Forbid();
+
+            if (!AuthorizationHelper.CanAddMembersToTeam(_context, current, teamId))
+            {
+                return Forbid();
+            }
+
             bool alreadyExists = _context.MembreEquipes
                 .Any(me => me.TeamID == teamId && me.UserID == userId);
 
@@ -65,7 +94,7 @@ namespace ProjetDotNet.Controllers
                 {
                     TeamID = teamId,
                     UserID = userId,
-                    Role = Models.Enums.RoleEquipe.Membre
+                    Role = RoleEquipe.Membre
                 };
 
                 _context.MembreEquipes.Add(membre);
@@ -74,10 +103,19 @@ namespace ProjetDotNet.Controllers
 
             return Ok();
         }
+
         // GET: MembreEquipe/Edit?teamId=1&userId=2
         [HttpGet]
         public IActionResult Edit(int teamId, int userId)
         {
+            var current = GetCurrentUserId();
+            if (current == 0) return Challenge();
+
+            if (!AuthorizationHelper.CanManageTeamMembers(_context, current, teamId))
+            {
+                return Forbid();
+            }
+
             var membre = _context.MembreEquipes
                 .Include(m => m.Utilisateur)
                 .Include(m => m.Equipe)
@@ -89,7 +127,6 @@ namespace ProjetDotNet.Controllers
             if (membre.Utilisateur == null)
                 membre.Utilisateur = _context.Utilisateurs.Find(membre.UserID);
 
-            // Préparer la liste des rôles (valeurs string) pour le select
             ViewBag.Roles = Enum.GetValues(typeof(RoleEquipe))
                                 .Cast<RoleEquipe>()
                                 .Select(r => new SelectListItem { Value = r.ToString(), Text = r.ToString() })
@@ -104,6 +141,14 @@ namespace ProjetDotNet.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(MembreEquipe model)
         {
+            var current = GetCurrentUserId();
+            if (current == 0) return Forbid();
+
+            if (!AuthorizationHelper.CanManageTeamMembers(_context, current, model.TeamID))
+            {
+                return Forbid();
+            }
+
             if (model == null)
                 return BadRequest();
 
@@ -113,7 +158,6 @@ namespace ProjetDotNet.Controllers
             if (existing == null)
                 return NotFound();
 
-            // Mettre à jour uniquement le rôle
             existing.Role = model.Role;
 
             try
@@ -122,7 +166,6 @@ namespace ProjetDotNet.Controllers
             }
             catch (DbUpdateException)
             {
-                // Repopuler la liste des rôles avant de réafficher la vue en erreur
                 ViewBag.Roles = Enum.GetValues(typeof(RoleEquipe))
                                     .Cast<RoleEquipe>()
                                     .Select(r => new SelectListItem { Value = r.ToString(), Text = r.ToString() })
@@ -140,6 +183,14 @@ namespace ProjetDotNet.Controllers
         [HttpGet]
         public IActionResult Delete(int teamId, int userId)
         {
+            var current = GetCurrentUserId();
+            if (current == 0) return Forbid();
+
+            if (!AuthorizationHelper.CanManageTeamMembers(_context, current, teamId))
+            {
+                return Forbid();
+            }
+
             var membre = _context.MembreEquipes
                 .Include(m => m.Utilisateur)
                 .SingleOrDefault(m => m.TeamID == teamId && m.UserID == userId);
@@ -151,11 +202,19 @@ namespace ProjetDotNet.Controllers
             return View("~/Views/MembreEquipe/Delete.cshtml", membre);
         }
 
-        // POST: MembreEquipe/Delete (form classique) => redirige vers Details
+        // POST: MembreEquipe/Delete (form classique)
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int teamId, int userId)
         {
+            var current = GetCurrentUserId();
+            if (current == 0) return Forbid();
+
+            if (!AuthorizationHelper.CanManageTeamMembers(_context, current, teamId))
+            {
+                return Forbid();
+            }
+
             var membre = _context.MembreEquipes
                 .SingleOrDefault(m => m.TeamID == teamId && m.UserID == userId);
 
@@ -173,6 +232,14 @@ namespace ProjetDotNet.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult RemoveMember([FromForm] int teamId, [FromForm] int userId)
         {
+            var current = GetCurrentUserId();
+            if (current == 0) return Forbid();
+
+            if (!AuthorizationHelper.CanManageTeamMembers(_context, current, teamId))
+            {
+                return Forbid();
+            }
+
             var membre = _context.MembreEquipes
                 .SingleOrDefault(m => m.TeamID == teamId && m.UserID == userId);
 

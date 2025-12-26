@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjetDotNet.Data;
+using ProjetDotNet.Helpers;
 using ProjetDotNet.Models;
 using ProjetDotNet.Models.Enums;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 
 namespace ProjetDotNet.Controllers
 {
@@ -34,6 +35,34 @@ namespace ProjetDotNet.Controllers
             return View("~/Views/Organisations/Index.cshtml", orgs);
         }
 
+        public IActionResult Details(int id)
+        {
+            // Charger sprint + projet + membres du projet + tâches (avec assignees) pour affichage complet
+            var sprint = _context.Sprints
+                .AsNoTracking()
+                .Include(s => s.Projet)
+                    .ThenInclude(p => p.Membres!)
+                        .ThenInclude(mp => mp.Utilisateur)
+                .Include(s => s.Taches!)
+                    .ThenInclude(t => t.Assignee)
+                .FirstOrDefault(s => s.SprintID == id);
+
+            if (sprint == null)
+            {
+                _logger.LogWarning("Détails demandés pour un sprint introuvable (ID = {Id})", id);
+                TempData["AlertDanger"] = $"Sprint introuvable (ID = {id}).";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Calculer droit de gestion (utilisé par la vue pour afficher Modifier / Supprimer / Créer)
+            var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            var canManageSprint = AuthorizationHelper.IsSiteAdmin(_context, currentUserId)
+                                  || AuthorizationHelper.CanCreateSprint(_context, currentUserId, sprint.ProjectID);
+
+            ViewBag.CanManageSprint = canManageSprint;
+
+            return View("~/Views/Sprints/Details.cshtml", sprint);
+        }
         public IActionResult Create()
         {
             return View("~/Views/Organisations/Create.cshtml");
