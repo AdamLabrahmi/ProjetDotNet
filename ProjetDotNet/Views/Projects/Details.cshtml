@@ -161,16 +161,17 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow p-6">
-                <h4 class="font-semibold text-gray-800 mb-2">Actions</h4>
-                <div class="space-y-2">
-                    @if (canEditProject)
-                    {
+            @if (canEditProject)
+            {
+                <div class="bg-white rounded-xl shadow p-6">
+                
+                    <h4 class="font-semibold text-gray-800 mb-2">Actions</h4>
+                    <div class="space-y-2">
                         <a asp-action="Edit" asp-route-id="@Model.ProjectID" class="block px-4 py-2 border rounded text-center hover:bg-gray-50">Modifier le projet</a>
-                    }
-                    <a asp-controller="MembreProjet" asp-action="Add" asp-route-projectId="@projectId" class="block px-4 py-2 bg-teal-600 text-white rounded text-center hover:bg-teal-700">Ajouter un membre</a>
+                        <a asp-controller="MembreProjet" asp-action="Add" asp-route-projectId="@projectId" class="block px-4 py-2 bg-teal-600 text-white rounded text-center hover:bg-teal-700">Ajouter un membre</a>
+                    </div>
                 </div>
-            </div>
+            }
         </aside>
     </div>
 </div>

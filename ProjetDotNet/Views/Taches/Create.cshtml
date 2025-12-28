@@ -1,134 +1,174 @@
 ﻿@model ProjetDotNet.Models.Tache
 @using ProjetDotNet.Models.Enums
+@using Microsoft.AspNetCore.Mvc.Rendering
 @{
     ViewBag.Title = "Créer une tâche";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var projets = ViewBag.Projets as List<SelectListItem> ?? new List<SelectListItem>();
+    var types = ViewBag.Types as List<SelectListItem> ?? new List<SelectListItem>();
+    var priorites = ViewBag.Priorites as List<SelectListItem> ?? new List<SelectListItem>();
+    var statuts = ViewBag.Statuts as List<SelectListItem> ?? new List<SelectListItem>();
 }
 
-<div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Créer une tâche</h1>
+<!-- En-tête -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Créer une tâche</h2>
+    <p class="text-gray-600">Ajoutez une nouvelle tâche au projet sélectionné</p>
+</div>
 
-    <form asp-action="Create" method="post" class="bg-white p-6 rounded-xl shadow">
-        <div asp-validation-summary="All" class="text-red-600 font-bold"></div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        @Html.AntiForgeryToken()
-        <div asp-validation-summary="ModelOnly" class="text-sm text-red-600 mb-4"></div>
+    <!-- Formulaire principal -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form asp-action="Create" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
 
-        <div class="mb-4">
-            <label asp-for="Titre" class="block text-sm font-medium text-gray-700">Titre</label>
-            <input asp-for="Titre" class="mt-1 block w-full border rounded px-3 py-2" />
-            <span asp-validation-for="Titre" class="text-sm text-red-600"></span>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <h3 class="text-red-800 font-semibold mb-2">Erreurs de validation</h3>
+                                <div asp-validation-summary="All" class="text-red-700 text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Titre -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Titre <span class="text-red-500">*</span></label>
+                    <input asp-for="Titre" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200" placeholder="Ex: Corriger le bug d'authentification" />
+                    <span asp-validation-for="Titre" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                    <textarea asp-for="Description" rows="5" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 resize-none" placeholder="Décrivez la tâche..."></textarea>
+                    <span asp-validation-for="Description" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Type / Priorité / Statut -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                        <select asp-for="Type" asp-items="types" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg"></select>
+                        <span asp-validation-for="Type" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Priorité</label>
+                        <select asp-for="Priorite" asp-items="priorites" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg"></select>
+                        <span asp-validation-for="Priorite" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Statut</label>
+                        <select asp-for="Statut" asp-items="statuts" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg"></select>
+                        <span asp-validation-for="Statut" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+                </div>
+
+                <!-- Estimation / Temps restant / Projet -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Estimation (h)</label>
+                        <input asp-for="EstimationDur" type="number" step="0.1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Temps restant (h)</label>
+                        <input asp-for="TempsRestant" type="number" step="0.1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Projet <span class="text-red-500">*</span></label>
+                        <select asp-for="ProjectID" id="ProjectSelect" asp-items="projets" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                            <option value="">-- Choisir un projet --</option>
+                        </select>
+                        <span asp-validation-for="ProjectID" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+                </div>
+
+                <!-- Sprint / Equipe / Assigné -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Sprint</label>
+                        <select asp-for="SprintID" id="SprintSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" disabled>
+                            <option value="">-- Choisir un projet d'abord --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Équipe</label>
+                        <select id="EquipeSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" disabled>
+                            <option value="">-- Choisir un projet d'abord --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Assigné</label>
+                        <select asp-for="AssigneeID" id="AssigneeSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" disabled>
+                            <option value="">-- Choisir une équipe d'abord --</option>
+                        </select>
+                        <span asp-validation-for="AssigneeID" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+                </div>
+
+                <!-- Hidden fields -->
+                <input asp-for="CreateurID" type="hidden" />
+                <input asp-for="DateCreation" type="hidden" value="@DateTime.Now.ToString("o")" />
+
+                <!-- Buttons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
+                    <button type="submit" class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg flex items-center space-x-2">
+                        <i class="fas fa-check"></i>
+                        <span>Créer la tâche</span>
+                    </button>
+                    <a asp-action="Index" class="bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transition flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Annuler</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Colonne droite - Aide -->
+    <div class="space-y-6">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-lightbulb text-teal-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Conseils</h3>
+            </div>
+            <ul class="space-y-3 text-sm text-gray-600">
+                <li class="flex items-start space-x-2"><i class="fas fa-check text-teal-600 mt-1"></i><span>Renseignez un titre clair et concis.</span></li>
+                <li class="flex items-start space-x-2"><i class="fas fa-check text-teal-600 mt-1"></i><span>Sélectionnez le bon projet pour lier sprint et équipes.</span></li>
+                <li class="flex items-start space-x-2"><i class="fas fa-check text-teal-600 mt-1"></i><span>N'assignez pas les leads si la tâche doit être exécutée par l'équipe.</span></li>
+                <li class="flex items-start space-x-2"><i class="fas fa-check text-teal-600 mt-1"></i><span>Estimez la durée pour faciliter le planning.</span></li>
+            </ul>
         </div>
 
-        <div class="mb-4">
-            <label asp-for="Description" class="block text-sm font-medium text-gray-700">Description</label>
-            <textarea asp-for="Description" class="mt-1 block w-full border rounded px-3 py-2" rows="4"></textarea>
-            <span asp-validation-for="Description" class="text-sm text-red-600"></span>
+        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-info text-white text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">À savoir</h3>
+            </div>
+            <p class="text-sm text-gray-700">Les sprints et équipes sont chargés dynamiquement selon le projet choisi. Les Scrum Master et Product Owner sont exclus de la liste d'assignation par défaut.</p>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-                <label asp-for="Type" class="block text-sm font-medium text-gray-700">Type</label>
-                <select asp-for="Type" class="mt-1 block w-full border rounded px-3 py-2"
-                        asp-items="ViewBag.Types">
-                </select>
-                <span asp-validation-for="Type" class="text-sm text-red-600"></span>
-            </div>
-
-            <div>
-                <label asp-for="Priorite" class="block text-sm font-medium text-gray-700">Priorité</label>
-                <select asp-for="Priorite" class="mt-1 block w-full border rounded px-3 py-2"
-                        asp-items="ViewBag.Priorites">
-                </select>
-                <span asp-validation-for="Priorite" class="text-sm text-red-600"></span>
-            </div>
-
-            <div>
-                <label asp-for="Statut" class="block text-sm font-medium text-gray-700">Statut</label>
-                <select asp-for="Statut" class="mt-1 block w-full border rounded px-3 py-2"
-                        asp-items="ViewBag.Statuts">
-                </select>
-                <span asp-validation-for="Statut" class="text-sm text-red-600"></span>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-                <label asp-for="EstimationDur" class="block text-sm font-medium text-gray-700">Estimation (h)</label>
-                <input asp-for="EstimationDur" type="number" step="0.1" class="mt-1 block w-full border rounded px-3 py-2" />
-                <span asp-validation-for="EstimationDur" class="text-sm text-red-600"></span>
-            </div>
-
-            <div>
-                <label asp-for="TempsRestant" class="block text-sm font-medium text-gray-700">Temps restant (h)</label>
-                <input asp-for="TempsRestant" type="number" step="0.1" class="mt-1 block w-full border rounded px-3 py-2" />
-                <span asp-validation-for="TempsRestant" class="text-sm text-red-600"></span>
-            </div>
-
-            <div class="mb-4">
-                <label asp-for="ProjectID">Projet</label>
-                <select asp-for="ProjectID"
-                        id="ProjectSelect"
-                        asp-items="ViewBag.Projets"
-                        class="w-full border px-3 py-2">
-                    <option value="">-- Choisir un projet --</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Affichage immédiat de Sprint + Equipe + Assignee -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div class="mb-4">
-                <label>Sprint</label>
-                <select asp-for="SprintID"
-                        id="SprintSelect"
-                        class="w-full border px-3 py-2"
-                        disabled>
-                    <option value="">-- Choisir un projet d'abord --</option>
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label>Équipe</label>
-                <select id="EquipeSelect"
-                        class="w-full border px-3 py-2"
-                        disabled>
-                    <option value="">-- Choisir un projet d'abord --</option>
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label asp-for="AssigneeID">Assigné</label>
-                <select asp-for="AssigneeID"
-                        id="AssigneeSelect"
-                        class="w-full border px-3 py-2"
-                        disabled>
-                    <option value="">-- Choisir une équipe d'abord --</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- autres champs (Sprint déjà présent, placeholder retiré) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-                <!-- placeholder alignement si besoin -->
-            </div>
-        </div>
-
-        <!-- CreateurID rendu hidden et pré-rempli dans le contrôleur -->
-        <input asp-for="CreateurID" type="hidden" />
-
-        <input asp-for="DateCreation" type="hidden" value="@DateTime.Now.ToString("o")" />
-
-        <div class="flex justify-end space-x-2">
-            <a asp-action="Index" class="px-4 py-2 rounded border">Annuler</a>
-            <button type="submit" class="px-4 py-2 rounded bg-teal-600 text-white">Créer</button>
-        </div>
-    </form>
+    </div>
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <partial name="_ValidationScriptsPartial" />
 
     <script>
         const projectSelect = document.getElementById("ProjectSelect");
@@ -154,7 +194,7 @@
                 return;
             }
 
-            // === Charger Sprints ===
+            // Charger sprints
             const sprintRes = await fetch(`/Taches/GetSprintsByProject?projectId=${projectId}`);
             const sprints = await sprintRes.json();
             sprintSelect.innerHTML = `<option value="">-- Aucun --</option>`;
@@ -163,7 +203,7 @@
             });
             sprintSelect.disabled = false;
 
-            // === Charger Equipes ===
+            // Charger équipes
             const equipeRes = await fetch(`/Taches/GetEquipesByProjet?projectId=${projectId}`);
             const equipes = await equipeRes.json();
             equipeSelect.innerHTML = `<option value="">-- Choisir une équipe --</option>`;
@@ -183,7 +223,7 @@
                 return;
             }
 
-            // Demander la liste sans ScrumMaster ni ProductOwner
+            // Exclure ScrumMaster et ProductOwner par défaut
             const res = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}&excludeLeads=true`);
             const membres = await res.json();
 
@@ -195,5 +235,4 @@
             assigneeSelect.disabled = false;
         });
     </script>
-
 }

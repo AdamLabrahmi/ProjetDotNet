@@ -232,15 +232,41 @@ namespace ProjetDotNet.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
         {
-            var equipe = _context.Equipes.Find(id);
-            if (equipe == null) return NotFound();
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                var equipe = _context.Equipes
+                    .Include(e => e.Membres)   // MembreEquipe
+                    .FirstOrDefault(e => e.TeamID == id);
 
-            int orgId = equipe.OrgID;
+                if (equipe == null) return NotFound();
 
-            _context.Equipes.Remove(equipe);
-            _context.SaveChanges();
+                // 1) Supprimer explicitement les membres de l'équipe
+                if (equipe.Membres != null && equipe.Membres.Any())
+                {
+                    _context.MembreEquipes.RemoveRange(equipe.Membres);
+                }
 
-            return RedirectToAction("Index");
+                // 2) Si vous avez des entités liées (projets liés à l'équipe, etc.), gérez-les ici.
+                //    Exemple : désassocier les projets -> _context.Projets.Where(p => p.TeamID == id)...
+                //    (adapter selon votre modèle si nécessaire)
+
+                // 3) Supprimer l'équipe
+                _context.Equipes.Remove(equipe);
+
+                _context.SaveChanges();
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                ModelState.AddModelError(string.Empty, "Impossible de supprimer l'équipe : " + ex.Message);
+                var teamView = _context.Equipes.Find(id);
+                return View("~/Views/Equipes/Delete.cshtml", teamView);
+            }
+
+            // Rediriger vers la liste ou la page organisation
+            return RedirectToAction(nameof(Index));
         }
 
         

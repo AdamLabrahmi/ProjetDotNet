@@ -207,9 +207,27 @@ namespace ProjetDotNet.Controllers
         // GET: /Taches/Edit/5
         public IActionResult Edit(int id)
         {
-            var tache = _context.Taches.Find(id);
+            var tache = _context.Taches
+                .AsNoTracking()
+                .Include(t => t.Projet)
+                .Include(t => t.Sprint)
+                .Include(t => t.Assignee)
+                .Include(t => t.Createur)
+                .FirstOrDefault(t => t.TacheID == id);
+
             if (tache == null) return NotFound();
 
+            var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_context, currentUserId);
+            // définir droit global d'édition (SiteAdmin ou rôles projet/équipe autorisés)
+            var canEditAll = isSiteAdmin || AuthorizationHelper.CanCreateTache(_context, currentUserId, tache.ProjectID ?? 0);
+            var isAssignee = tache.AssigneeID.HasValue && tache.AssigneeID.Value == currentUserId;
+
+            // transmettre flags à la vue
+            ViewBag.CanEditAll = canEditAll;
+            ViewBag.IsAssignee = isAssignee;
+
+            // repeupler dropdowns pour la vue
             PopulateProjectsDropDown(tache.ProjectID);
             PopulateSprintsDropDown(tache.SprintID);
             PopulateUsersDropDown(tache.AssigneeID ?? 0);
@@ -225,16 +243,49 @@ namespace ProjetDotNet.Controllers
         {
             if (id != updated.TacheID) return BadRequest();
 
+            var existing = _context.Taches.FirstOrDefault(t => t.TacheID == id);
+            if (existing == null) return NotFound();
+
+            var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_context, currentUserId);
+            var canEditAll = isSiteAdmin || AuthorizationHelper.CanCreateTache(_context, currentUserId, existing.ProjectID ?? 0);
+            var isAssignee = existing.AssigneeID.HasValue && existing.AssigneeID.Value == currentUserId;
+
+            // Si l'utilisateur n'a pas le droit global et n'est pas l'assignee -> interdit
+            if (!canEditAll && !isAssignee)
+                return Forbid();
+
+            // Repeupler dropdowns en cas d'erreur / ré-affichage
             PopulateProjectsDropDown(updated.ProjectID);
             PopulateSprintsDropDown(updated.SprintID);
             PopulateUsersDropDown(updated.AssigneeID ?? 0);
             PopulateEnumsDropDowns(updated.Statut, updated.Type, updated.Priorite);
 
+            // Si l'utilisateur est seulement l'assignee -> il ne peut modifier QUE le statut
+            if (!canEditAll && isAssignee)
+            {
+                // appliquer uniquement le changement de statut
+                existing.Statut = updated.Statut;
+                existing.DateMiseAJour = DateTime.Now;
+
+                try
+                {
+                    _context.SaveChanges();
+                    TempData["AlertSuccess"] = "Statut mis à jour.";
+                }
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogError(ex, "Erreur lors de la mise à jour du statut de la tâche ID {Id}", id);
+                    ModelState.AddModelError(string.Empty, "Erreur serveur lors de la mise à jour.");
+                    return View("~/Views/Taches/Edit.cshtml", existing);
+                }
+
+                return RedirectToAction(nameof(Details), new { id = existing.TacheID });
+            }
+
+            // Sinon utilisateur avec droits complets : valider et appliquer toutes les modifications
             if (!ModelState.IsValid)
                 return View("~/Views/Taches/Edit.cshtml", updated);
-
-            var existing = _context.Taches.FirstOrDefault(t => t.TacheID == id);
-            if (existing == null) return NotFound();
 
             existing.Titre = updated.Titre;
             existing.Description = updated.Description;
@@ -245,7 +296,6 @@ namespace ProjetDotNet.Controllers
             existing.TempsRestant = updated.TempsRestant;
             existing.DateMiseAJour = DateTime.Now;
             existing.DateResolution = updated.DateResolution;
-            // updated.ProjectID est int? maintenant — préserver si null
             existing.ProjectID = updated.ProjectID ?? existing.ProjectID;
             existing.SprintID = updated.SprintID;
             existing.AssigneeID = updated.AssigneeID;
@@ -261,7 +311,7 @@ namespace ProjetDotNet.Controllers
                 return View("~/Views/Taches/Edit.cshtml", updated);
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { id = existing.TacheID });
         }
 
         // GET: /Taches/Delete/5
@@ -437,6 +487,36 @@ namespace ProjetDotNet.Controllers
             // 3) Si rien, log et retourne 0
             _logger.LogWarning("Impossible de récupérer l'ID utilisateur. Claims: {@Claims}", User.Claims.Select(c => new { c.Type, c.Value }));
             return 0;
+        }
+        // ajout dans TachesController : route POST pour mise à jour du statut (utilisable via AJAX)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateStatus(int id, StatutTache statut)
+        {
+            var tache = _context.Taches.FirstOrDefault(t => t.TacheID == id);
+            if (tache == null) return NotFound();
+
+            var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
+            var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_context, currentUserId);
+
+            // Autoriser uniquement l'assignee (ou le site admin)
+            if (!isSiteAdmin && (!tache.AssigneeID.HasValue || tache.AssigneeID.Value != currentUserId))
+                return Forbid();
+
+            tache.Statut = statut;
+            tache.DateMiseAJour = DateTime.Now;
+
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Erreur lors de la mise à jour du statut de la tâche ID {Id}", id);
+                return StatusCode(500, "Erreur serveur");
+            }
+
+            return Json(new { success = true, statut = tache.Statut.ToString() });
         }
     }
 }

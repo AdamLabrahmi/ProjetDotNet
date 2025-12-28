@@ -1,73 +1,209 @@
 ﻿@model ProjetDotNet.Models.Sprint
 @using ProjetDotNet.Models.Enums
-
 @{
     ViewBag.Title = "Créer un sprint";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Créer un sprint</h1>
+<!-- En-tête -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Créer un sprint</h2>
+    <p class="text-gray-600">Créez un nouveau sprint pour votre projet</p>
+</div>
 
-    <form asp-action="Create" method="post" class="bg-white p-6 rounded-xl shadow">
-        @Html.AntiForgeryToken()
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div asp-validation-summary="All" class="text-red-600 mb-4"></div>
+    <!-- Formulaire principal (2/3) -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form asp-action="Create" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
 
-        <!-- Nom -->
-        <div class="mb-4">
-            <label asp-for="Nom"></label>
-            <input asp-for="Nom" class="w-full border p-2 rounded" />
-            <span asp-validation-for="Nom" class="text-red-600"></span>
-        </div>
-
-        <!-- Projet obligatoire -->
-        <div class="mb-4">
-            <label>Projet <span class="text-red-500">*</span></label>
-   
-            <!-- si Project obligatoire : NE PAS fournir d'option value="" -->
-            <select asp-for="ProjectID" asp-items="ViewBag.Projets"
-                    class="mt-1 block w-full border rounded px-3 py-2">
-            </select>
-            <span asp-validation-for="ProjectID" class="text-red-600"></span>
-        </div>
-
-        <!-- Dates -->
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label asp-for="DateDebut"></label>
-                <input asp-for="DateDebut" type="date" class="w-full border p-2 rounded" />
-            </div>
-            <div>
-                <label asp-for="DateFin"></label>
-                <input asp-for="DateFin" type="date" class="w-full border p-2 rounded" />
-            </div>
-        </div>
-
-        <!-- Statut -->
-        <div class="mb-4">
-            <label asp-for="Statut"></label>
-            <select asp-for="Statut" class="w-full border p-2 rounded">
-                @foreach (var s in Enum.GetValues(typeof(StatutSprint)).Cast<StatutSprint>())
+                @* Bloc résumé de validation *@
+                @if (!ViewData.ModelState.IsValid)
                 {
-                    <option value="@s">@s</option>
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <h3 class="text-red-800 font-semibold mb-2">Erreurs de validation</h3>
+                                <div asp-validation-summary="All" class="text-red-700 text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
                 }
-            </select>
+
+                <!-- Nom du sprint -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-running text-teal-600 mr-2"></i>
+                        Nom du sprint <span class="text-red-500">*</span>
+                    </label>
+                    <input asp-for="Nom"
+                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"
+                           placeholder="Ex: Sprint 1, Sprint Planning Q1..." />
+                    <span asp-validation-for="Nom" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Projet -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-project-diagram text-teal-600 mr-2"></i>
+                        Projet <span class="text-red-500">*</span>
+                    </label>
+                    <select asp-for="ProjectID"
+                            asp-items="ViewBag.Projets"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200">
+                    </select>
+                    <span asp-validation-for="ProjectID" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Dates -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar-plus text-teal-600 mr-2"></i>
+                            Date de début <span class="text-red-500">*</span>
+                        </label>
+                        <input asp-for="DateDebut"
+                               type="date"
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200" />
+                        <span asp-validation-for="DateDebut" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar-check text-teal-600 mr-2"></i>
+                            Date de fin <span class="text-red-500">*</span>
+                        </label>
+                        <input asp-for="DateFin"
+                               type="date"
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200" />
+                        <span asp-validation-for="DateFin" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+                </div>
+
+                <!-- Statut -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-info-circle text-teal-600 mr-2"></i>
+                        Statut <span class="text-red-500">*</span>
+                    </label>
+                    <select asp-for="Statut"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200">
+                        @foreach (var s in Enum.GetValues(typeof(StatutSprint)).Cast<StatutSprint>())
+                        {
+                            <option value="@s">@s</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Statut" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Objectif -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-bullseye text-teal-600 mr-2"></i>
+                        Objectif du sprint
+                    </label>
+                    <textarea asp-for="Objectif"
+                              rows="5"
+                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200 resize-none"
+                              placeholder="Décrivez l'objectif principal de ce sprint..."></textarea>
+                    <span asp-validation-for="Objectif" class="text-red-500 text-sm mt-1 block"></span>
+                    <p class="text-gray-500 text-xs mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Définissez clairement ce que vous souhaitez accomplir durant ce sprint
+                    </p>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
+                    <button type="submit"
+                            class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center space-x-2">
+                        <i class="fas fa-check"></i>
+                        <span>Créer le sprint</span>
+                    </button>
+                    <a asp-action="Index"
+                       class="bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Annuler</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Colonne droite - Aide (1/3) -->
+    <div class="space-y-6">
+
+        <!-- Carte d'aide -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-lightbulb text-teal-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Conseils</h3>
+            </div>
+            <ul class="space-y-3 text-sm text-gray-600">
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Un sprint dure généralement 1 à 4 semaines</span>
+                </li>
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Définissez un objectif SMART (Spécifique, Mesurable, Atteignable)</span>
+                </li>
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Planifiez les tâches avant de démarrer le sprint</span>
+                </li>
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Vous pourrez ajouter des tâches après la création</span>
+                </li>
+            </ul>
         </div>
 
-        <!-- Objectif -->
-        <div class="mb-4">
-            <label asp-for="Objectif"></label>
-            <textarea asp-for="Objectif" class="w-full border p-2 rounded"></textarea>
+        <!-- Carte statuts -->
+        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-traffic-light text-white text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Statuts</h3>
+            </div>
+            <div class="space-y-2">
+                <div class="bg-white rounded-lg p-3">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">PLANIFIE</span>
+                    </div>
+                    <p class="text-xs text-gray-600">Pour un sprint à venir</p>
+                </div>
+                <div class="bg-white rounded-lg p-3">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold">EN_COURS</span>
+                    </div>
+                    <p class="text-xs text-gray-600">Sprint actuellement actif</p>
+                </div>
+                <div class="bg-white rounded-lg p-3">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">TERMINE</span>
+                    </div>
+                    <p class="text-xs text-gray-600">Sprint complété</p>
+                </div>
+            </div>
         </div>
 
-        <div class="flex justify-end gap-2">
-            <a asp-action="Index" class="px-4 py-2 border rounded">Annuler</a>
-            <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded">
-                Créer
-            </button>
+        <!-- Carte informations -->
+        <div class="bg-blue-50 rounded-xl shadow-lg p-6 border border-blue-200">
+            <div class="flex items-center space-x-3 mb-3">
+                <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                <h3 class="font-bold text-gray-800">À savoir</h3>
+            </div>
+            <p class="text-sm text-gray-700">
+                Une fois créé, vous pourrez assigner des tâches au sprint et suivre leur progression en temps réel. Le sprint apparaîtra dans le backlog du projet.
+            </p>
         </div>
-    </form>
+    </div>
 </div>
 
 @section Scripts {

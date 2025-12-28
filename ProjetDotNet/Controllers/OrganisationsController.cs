@@ -37,31 +37,28 @@ namespace ProjetDotNet.Controllers
 
         public IActionResult Details(int id)
         {
-            // Charger sprint + projet + membres du projet + tâches (avec assignees) pour affichage complet
-            var sprint = _context.Sprints
+            var org = _context.Organisations
                 .AsNoTracking()
-                .Include(s => s.Projet)
-                    .ThenInclude(p => p.Membres!)
+                .Include(o => o.Admin)
+                    .ThenInclude(a => a.Utilisateur)
+                .Include(o => o.Equipes)
+                    .ThenInclude(e => e.Membres)
+                        .ThenInclude(me => me.Utilisateur)
+                .Include(o => o.Projets)
+                    .ThenInclude(p => p.Membres)
                         .ThenInclude(mp => mp.Utilisateur)
-                .Include(s => s.Taches!)
-                    .ThenInclude(t => t.Assignee)
-                .FirstOrDefault(s => s.SprintID == id);
+                .FirstOrDefault(o => o.OrgID == id);
 
-            if (sprint == null)
+            if (org == null)
             {
-                _logger.LogWarning("Détails demandés pour un sprint introuvable (ID = {Id})", id);
-                TempData["AlertDanger"] = $"Sprint introuvable (ID = {id}).";
-                return RedirectToAction(nameof(Index));
+                _logger.LogWarning("Organisation introuvable (ID = {Id})", id);
+                return NotFound();
             }
 
-            // Calculer droit de gestion (utilisé par la vue pour afficher Modifier / Supprimer / Créer)
             var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
-            var canManageSprint = AuthorizationHelper.IsSiteAdmin(_context, currentUserId)
-                                  || AuthorizationHelper.CanCreateSprint(_context, currentUserId, sprint.ProjectID);
+            ViewBag.CanManageOrg = AuthorizationHelper.IsSiteAdmin(_context, currentUserId) || org.AdminID == currentUserId;
 
-            ViewBag.CanManageSprint = canManageSprint;
-
-            return View("~/Views/Sprints/Details.cshtml", sprint);
+            return View("~/Views/Organisations/Details.cshtml", org);
         }
         public IActionResult Create()
         {

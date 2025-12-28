@@ -90,16 +90,24 @@ namespace ProjetDotNet.Controllers
 
         public IActionResult Details(int id)
         {
-            var tache = _context.Taches
+            var projet = _context.Projets
                 .AsNoTracking()
-                .Include(t => t.Projet)
-                .Include(t => t.Sprint)
-                .Include(t => t.Assignee)
-                .Include(t => t.Createur)
-                .FirstOrDefault(t => t.TacheID == id);
+                .Include(p => p.Organisation)
+                .Include(p => p.Membres!)
+                    .ThenInclude(mp => mp.Utilisateur)
+                .Include(p => p.Sprints)
+                .Include(p => p.Taches!)
+                    .ThenInclude(t => t.Assignee)
+                .FirstOrDefault(p => p.ProjectID == id);
 
-            if (tache == null) return NotFound();
-            return View("~/Views/Taches/Details.cshtml", tache);
+            if (projet == null) return NotFound();
+
+            var current = AuthorizationHelper.GetCurrentUserId(User, _context);
+            ViewBag.CanEditProject = AuthorizationHelper.IsSiteAdmin(_context, current) || AuthorizationHelper.IsProjectAdmin(_context, current, id);
+            ViewBag.CanAddProjectMember = AuthorizationHelper.CanAddMembersToProject(_context, current, id);
+            ViewBag.CanManageSprints = AuthorizationHelper.IsSiteAdmin(_context, current) || AuthorizationHelper.CanCreateSprint(_context, current, id);
+
+            return View("~/Views/Projects/Details.cshtml", projet);
         }
 
 
@@ -217,25 +225,54 @@ namespace ProjetDotNet.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
         {
-            int current = AuthorizationHelper.GetCurrentUserId(User, _context);
-            if (current == 0) return Challenge();
-
-            bool allowed = AuthorizationHelper.IsSiteAdmin(_context, current) || AuthorizationHelper.IsAnyTeamAdmin(_context, current);
-            if (!allowed) return Forbid();
-
-            var projet = _context.Projets.Find(id);
-            if (projet == null) return NotFound();
-
+            using var transaction = _context.Database.BeginTransaction();
             try
             {
-                _context.Projets.Remove(projet);
+                var project = _context.Projets
+                    .Include(p => p.Membres)   // MembreProjet
+                    .Include(p => p.Taches)    // Tâches liées
+                    .Include(p => p.Sprints)   // Sprints liés
+                    .FirstOrDefault(p => p.ProjectID == id);
+
+                if (project == null) return NotFound();
+
+                // 1) Supprimer explicitement les membres du projet
+                if (project.Membres != null && project.Membres.Any())
+                {
+                    _context.MembreProjets.RemoveRange(project.Membres);
+                }
+
+                // 2) Détacher les assignations des tâches (sécurité) puis supprimer les tâches si nécessaire
+                if (project.Taches != null && project.Taches.Any())
+                {
+                    foreach (var t in project.Taches)
+                    {
+                        // si vous préférez conserver les tâches et juste désassigner, commentez la suppression ci‑dessous
+                        // t.AssigneeID = null;
+                    }
+                    // Supprimer toutes les tâches du projet pour éviter orphelins
+                    _context.Taches.RemoveRange(project.Taches);
+                }
+
+                // 3) Supprimer les sprints liés
+                if (project.Sprints != null && project.Sprints.Any())
+                {
+                    _context.Sprints.RemoveRange(project.Sprints);
+                }
+
+                // 4) Enfin supprimer le projet
+                _context.Projets.Remove(project);
+
                 _context.SaveChanges();
+                transaction.Commit();
             }
-            catch (DbUpdateException ex)
+            catch (Exception ex)
             {
-                _logger.LogError(ex, "Erreur lors de la suppression du projet ID {Id}", id);
-                ModelState.AddModelError(string.Empty, "Impossible de supprimer le projet (contraintes DB).");
-                return View("~/Views/Projects/Delete.cshtml", projet);
+                transaction.Rollback();
+                // log si vous avez un logger (ILogger injected), ici on renvoie une erreur générique
+                ModelState.AddModelError(string.Empty, "Impossible de supprimer le projet : " + ex.Message);
+                var projView = _context.Projets.Find(id);
+                return View("~/Views/Projects/Delete.cshtml", projView);
             }
 
             return RedirectToAction(nameof(Index));

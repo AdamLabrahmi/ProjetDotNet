@@ -5,69 +5,226 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-4">Modifier le sprint</h1>
+<!-- En-tête -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Modifier le sprint</h2>
+    <p class="text-gray-600">Modifiez les informations de votre sprint</p>
+</div>
 
-    <form asp-action="Edit" method="post" class="bg-white p-6 rounded-xl shadow">
-        @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="SprintID" />
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div class="grid grid-cols-1 gap-4">
-            <div>
-                <label asp-for="Nom" class="block text-sm font-medium text-gray-700"></label>
-                <input asp-for="Nom" class="mt-1 block w-full border rounded px-3 py-2" />
-                <span asp-validation-for="Nom" class="text-sm text-red-600"></span>
-            </div>
+    <!-- Formulaire principal (2/3) -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form asp-action="Edit" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SprintID" />
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Projet (optionnel)</label>
-                @if (ViewBag.Projets != null)
+                @* Bloc résumé de validation *@
+                @if (!ViewData.ModelState.IsValid)
                 {
-                    <select asp-for="ProjectID" class="mt-1 block w-full border rounded px-3 py-2" asp-items="ViewBag.Projets">
-                        <option value="">-- Sélectionner --</option>
-                    </select>
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <h3 class="text-red-800 font-semibold mb-2">Erreurs de validation</h3>
+                                <div asp-validation-summary="All" class="text-red-700 text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
                 }
-                else
-                {
-                    <input asp-for="ProjectID" type="hidden" />
-                    <p class="text-sm text-gray-500">Aucun projet disponible</p>
-                }
-            </div>
 
-            <div class="grid grid-cols-2 gap-4">
+                <!-- Nom du sprint -->
                 <div>
-                    <label asp-for="DateDebut" class="block text-sm font-medium text-gray-700">Date de début</label>
-                    <input asp-for="DateDebut" type="date" class="mt-1 block w-full border rounded px-3 py-2" />
-                    <span asp-validation-for="DateDebut" class="text-sm text-red-600"></span>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-running text-teal-600 mr-2"></i>
+                        Nom du sprint <span class="text-red-500">*</span>
+                    </label>
+                    <input asp-for="Nom"
+                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"
+                           placeholder="Sprint 1" />
+                    <span asp-validation-for="Nom" class="text-red-500 text-sm mt-1 block"></span>
                 </div>
-                <div>
-                    <label asp-for="DateFin" class="block text-sm font-medium text-gray-700">Date de fin</label>
-                    <input asp-for="DateFin" type="date" class="mt-1 block w-full border rounded px-3 py-2" />
-                    <span asp-validation-for="DateFin" class="text-sm text-red-600"></span>
-                </div>
-            </div>
 
-            <div>
-                <label asp-for="Statut" class="block text-sm font-medium text-gray-700">Statut</label>
-                <select asp-for="Statut" class="mt-1 block w-full border rounded px-3 py-2">
-                    @foreach (var s in Enum.GetValues(typeof(StatutSprint)).Cast<StatutSprint>())
+                <!-- Projet -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-project-diagram text-teal-600 mr-2"></i>
+                        Projet
+                    </label>
+                    @if (ViewBag.Projets != null)
                     {
-                        <option value="@s" selected="@(Model.Statut == s ? "selected" : null)">@s</option>
+                        <select asp-for="ProjectID"
+                                asp-items="ViewBag.Projets"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200">
+                            <option value="">-- Sélectionner un projet --</option>
+                        </select>
                     }
-                </select>
-            </div>
+                    else
+                    {
+                        <input asp-for="ProjectID" type="hidden" />
+                        <div class="bg-gray-50 border-2 border-gray-200 rounded-lg px-4 py-3">
+                            <p class="text-sm text-gray-500">Aucun projet disponible</p>
+                        </div>
+                    }
+                    <span asp-validation-for="ProjectID" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
 
-            <div>
-                <label asp-for="Objectif" class="block text-sm font-medium text-gray-700">Objectif</label>
-                <textarea asp-for="Objectif" class="mt-1 block w-full border rounded px-3 py-2" rows="4"></textarea>
-            </div>
+                <!-- Dates -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar-plus text-teal-600 mr-2"></i>
+                            Date de début <span class="text-red-500">*</span>
+                        </label>
+                        <input asp-for="DateDebut"
+                               type="date"
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200" />
+                        <span asp-validation-for="DateDebut" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar-check text-teal-600 mr-2"></i>
+                            Date de fin <span class="text-red-500">*</span>
+                        </label>
+                        <input asp-for="DateFin"
+                               type="date"
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200" />
+                        <span asp-validation-for="DateFin" class="text-red-500 text-sm mt-1 block"></span>
+                    </div>
+                </div>
 
-            <div class="flex justify-end space-x-2">
-                <a asp-action="Index" class="px-4 py-2 rounded border">Annuler</a>
-                <button type="submit" class="px-4 py-2 rounded bg-teal-600 text-white">Enregistrer</button>
+                <!-- Statut -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-info-circle text-teal-600 mr-2"></i>
+                        Statut <span class="text-red-500">*</span>
+                    </label>
+                    <select asp-for="Statut"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200">
+                        @foreach (var s in Enum.GetValues(typeof(StatutSprint)).Cast<StatutSprint>())
+                        {
+                            <option value="@s" selected="@(Model.Statut == s)">@s</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Statut" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Objectif -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-bullseye text-teal-600 mr-2"></i>
+                        Objectif du sprint
+                    </label>
+                    <textarea asp-for="Objectif"
+                              rows="5"
+                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200 resize-none"
+                              placeholder="Décrivez l'objectif principal de ce sprint..."></textarea>
+                    <span asp-validation-for="Objectif" class="text-red-500 text-sm mt-1 block"></span>
+                    <p class="text-gray-500 text-xs mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Définissez clairement ce que vous souhaitez accomplir durant ce sprint
+                    </p>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
+                    <button type="submit"
+                            class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center space-x-2">
+                        <i class="fas fa-save"></i>
+                        <span>Enregistrer</span>
+                    </button>
+                    <a asp-action="Index"
+                       class="bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Annuler</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Colonne droite - Informations (1/3) -->
+    <div class="space-y-6">
+
+        <!-- Carte d'informations -->
+        @* <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-info-circle text-teal-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Informations</h3>
+            </div>
+            <div class="space-y-3 text-sm text-gray-600">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-hashtag text-teal-600"></i>
+                    <span class="font-medium">ID:</span>
+                    <span class="text-gray-800 font-mono">@Model.SprintID</span>
+                </div>
+                @if (Model.Projet != null)
+                {
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-folder text-teal-600"></i>
+                        <span class="font-medium">Projet actuel:</span>
+                        <span class="text-gray-800">@Model.Projet.Nom</span>
+                    </div>
+                }
+            </div>
+        </div> *@
+
+        <!-- Carte statuts -->
+        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-traffic-light text-white text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Statuts disponibles</h3>
+            </div>
+            <div class="space-y-2">
+                <div class="bg-white rounded-lg p-3 flex items-center space-x-2">
+                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">PLANIFIE</span>
+                    <span class="text-xs text-gray-600">Sprint à venir</span>
+                </div>
+                <div class="bg-white rounded-lg p-3 flex items-center space-x-2">
+                    <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold">EN_COURS</span>
+                    <span class="text-xs text-gray-600">Sprint actif</span>
+                </div>
+                <div class="bg-white rounded-lg p-3 flex items-center space-x-2">
+                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">TERMINE</span>
+                    <span class="text-xs text-gray-600">Sprint complété</span>
+                </div>
             </div>
         </div>
-    </form>
+
+        <!-- Carte d'avertissement -->
+        <div class="bg-amber-50 rounded-xl shadow-lg p-6 border border-amber-200">
+            <div class="flex items-center space-x-3 mb-3">
+                <i class="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
+                <h3 class="font-bold text-gray-800">Attention</h3>
+            </div>
+            <p class="text-sm text-gray-700">
+                Les modifications apportées affecteront toutes les tâches associées à ce sprint.
+            </p>
+        </div>
+
+        <!-- Carte actions dangereuses -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-red-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-red-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Zone dangereuse</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                Supprimer ce sprint supprimera toutes les données associées de manière permanente.
+            </p>
+            <a asp-action="Delete" asp-route-id="@Model.SprintID"
+               class="w-full bg-red-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-red-700 transition duration-200 flex items-center justify-center space-x-2">
+                <i class="fas fa-trash-alt"></i>
+                <span>Supprimer le sprint</span>
+            </a>
+        </div>
+    </div>
 </div>
 
 @section Scripts {

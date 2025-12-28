@@ -22,7 +22,7 @@
         </div>
 
         <div class="flex items-center space-x-2">
-            @if (canManageOrg)
+            @* @if (canManageOrg)
             {
                 <a asp-action="Edit" asp-route-id="@Model.OrgID" class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">
                     <i class="fas fa-edit mr-2"></i>Modifier
@@ -35,7 +35,7 @@
                         <i class="fas fa-trash-alt mr-2"></i>Supprimer
                     </button>
                 </form>
-            }
+            } *@
             <a asp-action="Index" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Retour</a>
         </div>
     </div>
@@ -160,11 +160,10 @@
                     @if (canManageOrg)
                     {
                         <a asp-action="Edit" asp-route-id="@Model.OrgID" class="block px-4 py-2 border rounded text-center hover:bg-gray-50">Modifier l'organisation</a>
-                        <form asp-action="Delete" method="post" onsubmit="return confirm('Supprimer cette organisation ? Cette action est irréversible.');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" asp-for="OrgID" />
-                            <button type="submit" class="w-full px-4 py-2 bg-red-600 text-white rounded">Supprimer définitivement</button>
-                        </form>
+                        <a asp-controller="Organisations" asp-action="Delete" asp-route-id="@Model.OrgID"
+                           class="w-full inline-block text-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                            Supprimer
+                        </a>
                     }
                     else
                     {

@@ -9,100 +9,292 @@
     var current = AuthorizationHelper.GetCurrentUserId(User, _db);
     var isSiteAdmin = AuthorizationHelper.IsSiteAdmin(_db, current);
 
-    // Peut créer une tâche globalement : site admin, ou rôle projet autorisé, ou rôle équipe autorisé
+    // droits création
     var canCreateAnyTache = isSiteAdmin
         || _db.MembreProjets.Any(mp => mp.UserID == current &&
             (mp.Role == RoleProjet.ProductOwner || mp.Role == RoleProjet.ScrumMaster || mp.Role == RoleProjet.Testeur))
         || _db.MembreEquipes.Any(me => me.UserID == current &&
             (me.Role == RoleEquipe.ScrumMaster || me.Role == RoleEquipe.ProductOwner || me.Role == RoleEquipe.QA));
+
+    // statistiques rapides
+    var total = Model?.Count() ?? 0;
+    var enCours = Model?.Count(t => t.Statut == StatutTache.EN_COURS) ?? 0;
+    var terminees = Model?.Count(t => t.Statut == StatutTache.TERMINE) ?? 0;
+    var aFaire = Model?.Count(t => t.Statut == StatutTache.A_FAIRE) ?? 0;
+
+    var enumStatuts = Enum.GetValues(typeof(StatutTache)).Cast<StatutTache>().ToList();
 }
 
-<div class="max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Tâches</h1>
-            <p class="text-gray-600">Liste des tâches</p>
-        </div>
+@* antiforgery token pour AJAX *@
+<form id="antiForgeryForm">@Html.AntiForgeryToken()</form>
 
-        @if (canCreateAnyTache)
-        {
-            <a asp-action="Create" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700">Nouvelle tâche</a>
-        }
+<!-- En-tête -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Tâches</h1>
+        <p class="text-gray-600">Gérez et suivez les tâches</p>
     </div>
 
-    @if (Model != null && Model.Any())
+    @if (canCreateAnyTache)
     {
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
-                        <tr>
-                            <th class="px-4 py-3 text-left">Titre</th>
-                            <th class="px-4 py-3 text-left">Projet</th>
-                            <th class="px-4 py-3 text-left">Sprint</th>
-                            <th class="px-4 py-3 text-left">Assigné</th>
-                            <th class="px-4 py-3 text-left">Statut</th>
-                            <th class="px-4 py-3 text-left">Priorité</th>
-                            <th class="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        @foreach (var t in Model)
-                        {
-                            // permission par tâche : seul SiteAdmin ou rôle Admin / ScrumMaster / ProductOwner peuvent modifier/supprimer
-                            var projectId = t.ProjectID ?? 0;
-
-                            // rôle explicite sur le projet
-                            var isProjectRoleAllowed = _db.MembreProjets.Any(mp =>
-                                mp.ProjectID == projectId &&
-                                mp.UserID == current &&
-                                (mp.Role == RoleProjet.Administrateur || mp.Role == RoleProjet.ScrumMaster || mp.Role == RoleProjet.ProductOwner)
-                            );
-
-                            // rôle sur une équipe de l'organisation du projet
-                            var orgId = _db.Projets.Where(p => p.ProjectID == projectId).Select(p => p.OrgID).FirstOrDefault();
-                            var teamIdsOfOrg = _db.Equipes.Where(e => e.OrgID == orgId).Select(e => e.TeamID);
-                            var isTeamRoleAllowed = teamIdsOfOrg.Any()
-                                && _db.MembreEquipes.Any(me =>
-                                    teamIdsOfOrg.Contains(me.TeamID) &&
-                                    me.UserID == current &&
-                                    (me.Role == RoleEquipe.Admin || me.Role == RoleEquipe.ScrumMaster || me.Role == RoleEquipe.ProductOwner)
-                            );
-
-                            var canManageThisTask = isSiteAdmin || isProjectRoleAllowed || isTeamRoleAllowed;
-
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3">@t.Titre</td>
-                                <td class="px-4 py-3">@t.Projet?.Nom ?? "—"</td>
-                                <td class="px-4 py-3">@t.Sprint?.Nom ?? "—"</td>
-                                <td class="px-4 py-3">@t.Assignee?.Nom ?? "—"</td>
-                                <td class="px-4 py-3">@t.Statut</td>
-                                <td class="px-4 py-3">@t.Priorite</td>
-                                <td class="px-4 py-3 text-right">
-                                    <a asp-action="Details" asp-route-id="@t.TacheID" class="text-gray-600 hover:text-teal-600 mr-2">Voir</a>
-
-                                    @* Montrer Modifier / Supprimer seulement aux rôles autorisés *@
-                                    @if (canManageThisTask)
-                                    {
-                                        <a asp-action="Edit" asp-route-id="@t.TacheID" class="text-teal-600 hover:text-teal-700 mr-2">Modifier</a>
-                                        <a asp-action="Delete" asp-route-id="@t.TacheID" class="text-red-600 hover:text-red-700">Supprimer</a>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="bg-white rounded-xl p-8 text-center shadow">
-            <p class="text-gray-600">Aucune tâche trouvée.</p>
-            @if (canCreateAnyTache)
-            {
-                <a asp-action="Create" class="mt-4 inline-block bg-teal-600 text-white px-4 py-2 rounded-lg">Créer une tâche</a>
-            }
-        </div>
+        <a asp-action="Create" class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg flex items-center space-x-2">
+            <i class="fas fa-plus"></i>
+            <span class="font-semibold">Nouvelle tâche</span>
+        </a>
     }
 </div>
+
+<!-- Statistiques rapides -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-teal-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">Total tâches</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@total</h3>
+            </div>
+            <div class="w-14 h-14 bg-teal-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-tasks text-teal-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">En cours</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@enCours</h3>
+            </div>
+            <div class="w-14 h-14 bg-yellow-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-spinner text-yellow-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">Terminées</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@terminees</h3>
+            </div>
+            <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-cyan-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 font-medium">À faire</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-2">@aFaire</h3>
+            </div>
+            <div class="w-14 h-14 bg-cyan-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-list text-cyan-600 text-2xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recherche / filtres -->
+<div class="bg-white rounded-xl shadow-md p-4 mb-6">
+    <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="Rechercher une tâche..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" />
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2">
+                <i class="fas fa-filter text-gray-600"></i>
+                <span class="text-gray-700">Filtrer</span>
+            </button>
+            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center space-x-2">
+                <i class="fas fa-sort text-gray-600"></i>
+                <span class="text-gray-700">Trier</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-600 uppercase">
+                        <th class="px-6 py-4 text-left">Titre</th>
+                        <th class="px-6 py-4 text-left">Projet</th>
+                        <th class="px-6 py-4 text-left">Sprint</th>
+                        <th class="px-6 py-4 text-left">Assigné</th>
+                        <th class="px-6 py-4 text-left">Statut</th>
+                        <th class="px-6 py-4 text-left">Priorité</th>
+                        <th class="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var t in Model)
+                    {
+                        var projectId = t.ProjectID ?? 0;
+
+                        var isProjectRoleAllowed = _db.MembreProjets.Any(mp =>
+                            mp.ProjectID == projectId &&
+                            mp.UserID == current &&
+                            (mp.Role == RoleProjet.Administrateur || mp.Role == RoleProjet.ScrumMaster || mp.Role == RoleProjet.ProductOwner)
+                        );
+
+                        var orgId = _db.Projets.Where(p => p.ProjectID == projectId).Select(p => p.OrgID).FirstOrDefault();
+                        var teamIdsOfOrg = _db.Equipes.Where(e => e.OrgID == orgId).Select(e => e.TeamID);
+                        var isTeamRoleAllowed = teamIdsOfOrg.Any()
+                            && _db.MembreEquipes.Any(me =>
+                                teamIdsOfOrg.Contains(me.TeamID) &&
+                                me.UserID == current &&
+                                (me.Role == RoleEquipe.Admin || me.Role == RoleEquipe.ScrumMaster || me.Role == RoleEquipe.ProductOwner)
+                        );
+
+                        var canManageThisTask = isSiteAdmin || isProjectRoleAllowed || isTeamRoleAllowed;
+                        var isAssignee = t.Assignee != null && t.Assignee.UserID == current;
+
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-800">@t.Titre</div>
+                                @* <div class="text-xs text-gray-500">ID: @t.TacheID</div> *@
+                            </td>
+
+                            <td class="px-6 py-4">@t.Projet?.Nom </td>
+                            <td class="px-6 py-4">@t.Sprint?.Nom</td>
+                            <td class="px-6 py-4">@t.Assignee?.Nom </td>
+
+                            <td class="px-6 py-4">
+                                @if (isAssignee || isSiteAdmin)
+                                {
+                                    <select class="status-select border px-2 py-1 rounded" data-id="@t.TacheID" data-current="@t.Statut.ToString()">
+                                        @foreach (var s in enumStatuts)
+                                        {
+                                            if (s == t.Statut)
+                                            {
+                                                <option value="@s" selected>@s.ToString()</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@s">@s.ToString()</option>
+                                            }
+                                        }
+                                    </select>
+                                }
+                                else
+                                {
+                                    <span class="text-sm text-gray-700">@t.Statut</span>
+                                }
+                            </td>
+
+                            <td class="px-6 py-4">@t.Priorite</td>
+
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end space-x-2">
+                                    <a asp-action="Details" asp-route-id="@t.TacheID"
+                                       class="text-gray-600 hover:text-teal-600 p-2 rounded-lg hover:bg-teal-50"
+                                       title="Voir" aria-label="Voir">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                    @if (canManageThisTask)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@t.TacheID"
+                                           class="text-teal-600 hover:text-teal-700 p-2 rounded-lg hover:bg-teal-50"
+                                           title="Modifier" aria-label="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <form asp-action="Delete" asp-route-id="@t.TacheID" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50"
+                                                    title="Supprimer" aria-label="Supprimer"
+                                                    onclick="return confirm('Supprimer cette tâche ?');">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="bg-white rounded-xl p-12 text-center shadow">
+        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-tasks text-gray-400 text-4xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Aucune tâche</h3>
+        <p class="text-gray-600 mb-6">Créez votre première tâche pour démarrer le suivi</p>
+        @if (canCreateAnyTache)
+        {
+            <a asp-action="Create" class="inline-flex items-center space-x-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-8 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition shadow-lg">
+                <i class="fas fa-plus"></i>
+                <span class="font-semibold">Créer une tâche</span>
+            </a>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            const tokenEl = document.querySelector('#antiForgeryForm input[name="__RequestVerificationToken"]');
+            const token = tokenEl ? tokenEl.value : '';
+
+            document.addEventListener('change', async function (e) {
+                const sel = e.target;
+                if (!sel.classList.contains('status-select')) return;
+
+                const tacheId = sel.getAttribute('data-id');
+                const newStatut = sel.value;
+                const prev = sel.getAttribute('data-current');
+
+                sel.disabled = true;
+                try {
+                    const body = new URLSearchParams();
+                    body.append('id', tacheId);
+                    body.append('statut', newStatut);
+
+                    const res = await fetch('/Taches/UpdateStatus', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'RequestVerificationToken': token,
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: body.toString()
+                    });
+
+                    if (!res.ok) {
+                        const text = await res.text();
+                        alert('Erreur lors de la mise à jour du statut: ' + (text || res.status));
+                        sel.value = prev;
+                    } else {
+                        const json = await res.json();
+                        if (json && json.success) {
+                            sel.setAttribute('data-current', json.statut);
+                        } else {
+                            alert('Erreur inattendue lors de la mise à jour du statut.');
+                            sel.value = prev;
+                        }
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Erreur réseau lors de la mise à jour du statut.');
+                    sel.value = prev;
+                } finally {
+                    sel.disabled = false;
+                }
+            });
+        })();
+    </script>
+}

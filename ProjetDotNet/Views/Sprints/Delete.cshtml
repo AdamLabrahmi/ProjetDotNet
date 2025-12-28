@@ -1,31 +1,171 @@
 ﻿@model ProjetDotNet.Models.Sprint
+@using ProjetDotNet.Models.Enums
 @{
     ViewBag.Title = "Supprimer le sprint";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<div class="max-w-md mx-auto">
-    <h1 class="text-2xl font-bold mb-4 text-red-600">Supprimer le sprint</h1>
-
-    <div class="bg-white p-6 rounded-xl shadow mb-4">
-        <p class="font-semibold">Nom</p>
-        <p class="mb-3">@Model.Nom</p>
-
-        <p class="font-semibold">Projet</p>
-        <p class="mb-3">@Model.Projet?.Nom ?? "—"</p>
-
-        <p class="font-semibold">Période</p>
-        <p class="mb-3">@Model.DateDebut.ToString("dd MMMM yyyy") — @Model.DateFin.ToString("dd MMMM yyyy")</p>
-
-        <p class="text-gray-600">Confirmez-vous la suppression de ce sprint ? Cette action est irréversible.</p>
+<div class="max-w-4xl mx-auto">
+    <!-- En-tête avec avertissement -->
+    <div class="mb-6">
+        <div class="flex items-center space-x-3 mb-2">
+            <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
+            <h2 class="text-3xl font-bold text-red-600">Supprimer le sprint</h2>
+        </div>
+        <p class="text-gray-600">Cette action est irréversible et supprimera toutes les tâches liées au sprint.</p>
     </div>
 
-    <form asp-action="Delete" method="post">
-        @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="SprintID" />
-        <div class="flex justify-end space-x-2">
-            <a asp-action="Index" class="px-4 py-2 rounded border">Annuler</a>
-            <button type="submit" class="px-4 py-2 rounded bg-red-600 text-white">Supprimer</button>
+    <!-- Carte du sprint à supprimer -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+        <!-- En-tête rouge -->
+        <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
+            <div class="flex items-center space-x-4 text-white">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-running text-3xl"></i>
+                </div>
+                <div>
+                    <p class="text-red-100 text-sm font-medium">Sprint à supprimer</p>
+                    <h3 class="text-2xl font-bold">@Model.Nom</h3>
+                </div>
+            </div>
         </div>
-    </form>
+
+        <!-- Contenu -->
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Projet</label>
+                    <p class="text-gray-800 font-medium mt-2">@Model.Projet?.Nom ?? "—"</p>
+                </div>
+
+                <div>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Période</label>
+                    <p class="text-gray-800 font-medium mt-2">@Model.DateDebut.ToString("yyyy-MM-dd") — @Model.DateFin.ToString("yyyy-MM-dd")</p>
+                </div>
+
+                <div>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Statut</label>
+                    <div class="mt-2">
+                        @switch (Model.Statut)
+                        {
+                            case StatutSprint.PLANIFIE:
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center">Planifié</span>;
+                                break;
+                            case StatutSprint.EN_COURS:
+                                <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center">En cours</span>;
+                                break;
+                            case StatutSprint.TERMINE:
+                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center">Terminé</span>;
+                                break;
+                            default:
+                                <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold">@Model.Statut</span>;
+                                break;
+                        }
+                    </div>
+                </div>
+
+                @* <div>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ID</label>
+                    <p class="text-gray-800 font-medium mt-2">@Model.SprintID</p>
+                </div> *@
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Objectif))
+            {
+                <div class="pt-4 border-t border-gray-200">
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Objectif</label>
+                    <p class="text-gray-700 mt-2">@Model.Objectif</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Confirmation et formulaire -->
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-check-circle text-gray-600 mr-2"></i>
+            Confirmation requise
+        </h3>
+        <p class="text-gray-600 mb-6">
+            Tapez le nom du sprint ci‑dessous pour confirmer la suppression :
+        </p>
+
+        <div class="mb-6">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                Tapez "<span class="text-red-600 font-bold">@Model.Nom</span>" pour confirmer
+            </label>
+            <input type="text"
+                   id="confirmName"
+                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition duration-200"
+                   placeholder="Nom du sprint" />
+        </div>
+
+        <form asp-action="Delete" method="post" id="deleteForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="SprintID" />
+
+            <div class="flex gap-3">
+                <button type="submit"
+                        id="deleteButton"
+                        disabled
+                        class="flex-1 bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Supprimer définitivement</span>
+                </button>
+                <a asp-action="Index"
+                   class="flex-1 bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center justify-center space-x-2">
+                    <i class="fas fa-times"></i>
+                    <span>Annuler</span>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info -->
+    <div class="bg-blue-50 rounded-xl p-4 mt-6 border border-blue-200">
+        <div class="flex items-start space-x-3">
+            <i class="fas fa-info-circle text-blue-600 text-lg mt-0.5"></i>
+            <div class="text-sm text-blue-800">
+                <p class="font-semibold mb-1">Besoin d'aide ?</p>
+                <p>Si vous voulez seulement archiver le sprint plutôt que le supprimer, changez son statut ou contactez l'administrateur.</p>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const confirmInput = document.getElementById('confirmName');
+            const deleteButton = document.getElementById('deleteButton');
+
+            // Sérialisation JSON pour échapper correctement le nom côté serveur
+            const expectedName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Nom ?? ""));
+
+            function normalize(s) {
+                return (s || "").trim().toLowerCase();
+            }
+
+            function validateInput() {
+                const val = normalize(confirmInput.value);
+                const exp = normalize(expectedName);
+
+                if (val === exp && exp !== "") {
+                    deleteButton.disabled = false;
+                    deleteButton.classList.remove('opacity-50');
+                } else {
+                    deleteButton.disabled = true;
+                    deleteButton.classList.add('opacity-50');
+                }
+            }
+
+            if (confirmInput) {
+                confirmInput.addEventListener('input', validateInput);
+                confirmInput.addEventListener('change', validateInput);
+                confirmInput.addEventListener('paste', function () { setTimeout(validateInput, 10); });
+                confirmInput.addEventListener('keyup', validateInput);
+                setTimeout(validateInput, 50);
+            }
+        })();
+    </script>
+}

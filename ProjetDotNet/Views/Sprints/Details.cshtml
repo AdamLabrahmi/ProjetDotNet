@@ -5,52 +5,250 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<div class="max-w-4xl mx-auto">
-    <div class="mb-6 flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold">@Model.Nom</h1>
-            <p class="text-sm text-gray-500">@Model.Projet?.Nom ?? "Projet non assigné"</p>
-        </div>
-        <div class="flex items-center space-x-2">
-            <a asp-action="Edit" asp-route-id="@Model.SprintID" class="bg-white border px-4 py-2 rounded hover:bg-gray-50">Modifier</a>
-            <a asp-action="Index" class="bg-gray-100 px-4 py-2 rounded hover:bg-gray-200">Retour</a>
-        </div>
-    </div>
-
-    <div class="bg-white p-6 rounded-xl shadow">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h3 class="text-sm text-gray-500 uppercase">Période</h3>
-                <p class="mt-2">@Model.DateDebut.ToString("dd MMMM yyyy") — @Model.DateFin.ToString("dd MMMM yyyy")</p>
-            </div>
-            <div>
-                <h3 class="text-sm text-gray-500 uppercase">Statut</h3>
-                <p class="mt-2">
+<div class="max-w-6xl mx-auto">
+    <!-- En-tête avec bannière -->
+    <div class="mb-6">
+        <div class="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-2xl p-8 shadow-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4 text-white">
+                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-running text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-teal-100 text-sm font-medium">Sprint</p>
+                        <h1 class="text-3xl font-bold">@Model.Nom</h1>
+                        <p class="text-teal-100 text-sm mt-1">
+                            <i class="fas fa-folder mr-1"></i>
+                            @(Model.Projet?.Nom ?? "Projet non assigné")
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a asp-action="Edit" asp-route-id="@Model.SprintID"
+                       class="bg-white text-teal-600 px-6 py-3 rounded-lg hover:bg-gray-100 transition shadow-md font-semibold flex items-center space-x-2">
+                        <i class="fas fa-edit"></i>
+                        <span>Modifier</span>
+                    </a>
                     @switch (Model.Statut)
                     {
                         case StatutSprint.PLANIFIE:
-                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">Planifié</span>
-                            ;
+                            <span class="bg-blue-400 text-blue-900 px-4 py-2 rounded-lg text-sm font-bold flex items-center space-x-2">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Planifié</span>
+                            </span>
                             break;
                         case StatutSprint.EN_COURS:
-                            <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">En cours</span>
-                            ;
+                            <span class="bg-yellow-400 text-yellow-900 px-4 py-2 rounded-lg text-sm font-bold flex items-center space-x-2">
+                                <i class="fas fa-spinner"></i>
+                                <span>En cours</span>
+                            </span>
                             break;
                         case StatutSprint.TERMINE:
-                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full">Terminé</span>
-                            ;
+                            <span class="bg-green-400 text-green-900 px-4 py-2 rounded-lg text-sm font-bold flex items-center space-x-2">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Terminé</span>
+                            </span>
                             break;
                         default:
-                            <span>@Model.Statut</span>
-                            ;
+                            <span class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-bold">
+                                @Model.Statut
+                            </span>
                             break;
                     }
-                </p>
+                </div>
             </div>
-            <div class="md:col-span-2">
-                <h3 class="text-sm text-gray-500 uppercase">Objectif</h3>
-                <p class="mt-2 text-gray-700">@(!string.IsNullOrEmpty(Model.Objectif) ? Model.Objectif : "Aucun objectif défini")</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Colonne principale (2/3) -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Carte Période du sprint -->
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-calendar-alt text-teal-600 mr-3"></i>
+                    Période du sprint
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Date de début -->
+                    <div class="bg-teal-50 rounded-xl p-6 border-l-4 border-teal-500">
+                        <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Date de début</label>
+                        <div class="mt-2 flex items-center space-x-2">
+                            <i class="fas fa-play-circle text-teal-600 text-2xl"></i>
+                            <span class="text-gray-800 font-semibold text-lg">
+                                @Model.DateDebut.ToString("dd MMMM yyyy")
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Date de fin -->
+                    <div class="bg-emerald-50 rounded-xl p-6 border-l-4 border-emerald-500">
+                        <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Date de fin</label>
+                        <div class="mt-2 flex items-center space-x-2">
+                            <i class="fas fa-flag-checkered text-emerald-600 text-2xl"></i>
+                            <span class="text-gray-800 font-semibold text-lg">
+                                @Model.DateFin.ToString("dd MMMM yyyy")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                @{
+                    var duree = (Model.DateFin - Model.DateDebut).Days;
+                    var progress = Model.DateDebut <= DateTime.Now && DateTime.Now <= Model.DateFin
+                    ? (int)(((DateTime.Now - Model.DateDebut).Days / (double)duree) * 100)
+                    : DateTime.Now > Model.DateFin ? 100 : 0;
+                }
+
+                <div class="mt-6 bg-gray-50 rounded-xl p-6">
+                    @* <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-semibold text-gray-600">Progression temporelle</span>
+                        <span class="text-sm font-bold text-teal-600">@progress%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div class="bg-gradient-to-r from-teal-500 to-emerald-500 h-3 rounded-full transition-all duration-500" style="width: @progress%"></div>
+                    </div> *@
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-hourglass-half mr-1"></i>
+                        Durée totale : @duree jours
+                    </p>
+                </div>
             </div>
+
+            <!-- Carte Objectif -->
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-bullseye text-teal-600 mr-3"></i>
+                    Objectif du sprint
+                </h2>
+                @if (!string.IsNullOrEmpty(Model.Objectif))
+                {
+                    <p class="text-gray-700 leading-relaxed whitespace-pre-wrap text-lg">@Model.Objectif</p>
+                }
+                else
+                {
+                    <div class="bg-gray-50 rounded-lg p-6 text-center">
+                        <i class="fas fa-info-circle text-gray-400 text-3xl mb-3"></i>
+                        <p class="text-gray-400 italic">Aucun objectif défini pour ce sprint</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Carte Informations du projet -->
+            @if (Model.Projet != null)
+            {
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-project-diagram text-teal-600 mr-3"></i>
+                        Projet associé
+                    </h2>
+
+                    <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-6 border border-teal-200">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold">@(Model.Projet.CleProjet ?? "P")</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">@Model.Projet.Nom</h3>
+                                <p class="text-sm text-gray-600">@(Model.Projet.CleProjet ?? "Aucune clé")</p>
+                            </div>
+                        </div>
+                        <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Projet.ProjectID"
+                           class="mt-4 w-full bg-teal-600 text-white text-center py-2 rounded-lg hover:bg-teal-700 transition flex items-center justify-center space-x-2">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span class="font-medium">Voir le projet</span>
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Colonne droite (1/3) -->
+        <div class="space-y-6">
+
+            <!-- Carte Actions rapides -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-bolt text-teal-600 mr-2"></i>
+                    Actions rapides
+                </h3>
+                <div class="space-y-3">
+                    <a asp-action="Edit" asp-route-id="@Model.SprintID"
+                       class="w-full bg-teal-600 text-white px-4 py-3 rounded-lg hover:bg-teal-700 transition flex items-center justify-center space-x-2">
+                        <i class="fas fa-edit"></i>
+                        <span class="font-medium">Modifier le sprint</span>
+                    </a>
+                    @* <button class="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition flex items-center justify-center space-x-2">
+                        <i class="fas fa-tasks"></i>
+                        <span class="font-medium">Voir les tâches</span>
+                    </button> *@
+                    <button class="w-full bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition flex items-center justify-center space-x-2">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="font-medium">Rapport du sprint</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Carte Informations -->
+            @* <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-teal-600 mr-2"></i>
+                    Informations
+                </h3>
+                <div class="space-y-3 text-sm text-gray-600">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-hashtag text-teal-600"></i>
+                        @* <span class="font-medium">ID:</span>
+                        <span class="text-gray-800 font-mono">@Model.SprintID</span>
+                    </div>
+                    @if (Model.Projet != null)
+                    {
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-folder text-teal-600"></i>
+                            <span class="font-medium">Projet:</span>
+                            <span class="text-gray-800">@Model.Projet.Nom</span>
+                        </div>
+                    }
+                </div>
+            </div> *@
+
+            <!-- Carte Statistiques -->
+            @* <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-pie text-teal-600 mr-2"></i>
+                    Statistiques
+                </h3>
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Tâches totales</span>
+                            <span class="text-2xl font-bold text-gray-800">0</span>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Tâches terminées</span>
+                            <span class="text-2xl font-bold text-gray-800">0</span>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Progression</span>
+                            <span class="text-2xl font-bold text-teal-600">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div> *@
+
+            <!-- Bouton retour -->
+            <a asp-action="Index"
+               class="w-full bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition flex items-center justify-center space-x-2 font-semibold">
+                <i class="fas fa-arrow-left"></i>
+                <span>Retour à la liste</span>
+            </a>
         </div>
     </div>
 </div>

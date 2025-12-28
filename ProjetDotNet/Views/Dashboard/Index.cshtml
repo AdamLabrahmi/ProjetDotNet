@@ -1,27 +1,34 @@
-﻿@{
+﻿@model ProjetDotNet.Models.ViewModels.DashboardViewModel
+@{
     ViewBag.Title = "Dashboard";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    // JSON préparés côté contrôleur
+    var tasksByStatusJson = ViewBag.TasksByStatusJson as string ?? "[]";
+    var tasksByPriorityJson = ViewBag.TasksByPriorityJson as string ?? "[]";
 }
 
 <div class="space-y-6 p-6">
-
-    <!-- Statistiques statiques -->
     <section aria-labelledby="stats-title">
         <h2 id="stats-title" class="text-xl font-semibold text-gray-700 mb-4">Statistiques rapides</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="p-5 bg-white rounded-lg shadow flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center text-teal-600">
-                        <i class="fas fa-users text-lg"></i>
+            @* Bloc "Utilisateurs" : afficher pour l'admin, autre chose pour les autres *@
+            @if (Model.IsSiteAdmin)
+            {
+                <div class="p-5 bg-white rounded-lg shadow flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center text-teal-600">
+                            <i class="fas fa-users text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Utilisateurs</p>
+                            <p class="text-2xl font-bold text-gray-800">@Model.TotalUsers</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Utilisateurs</p>
-                        <p class="text-2xl font-bold text-gray-800">10 240</p>
-                    </div>
+                    <div class="text-sm text-green-600 font-semibold">global</div>
                 </div>
-                <div class="text-sm text-green-600 font-semibold">+4.2%</div>
-            </div>
+            }
 
             <div class="p-5 bg-white rounded-lg shadow flex items-center justify-between">
                 <div class="flex items-center space-x-4">
@@ -30,10 +37,12 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500">Projets</p>
-                        <p class="text-2xl font-bold text-gray-800">5 120</p>
+                        <p class="text-2xl font-bold text-gray-800">
+                            @(Model.IsSiteAdmin? Model.TotalProjects: Model.MyProjects)
+                        </p>
                     </div>
                 </div>
-                <div class="text-sm text-green-600 font-semibold">+1.8%</div>
+                <div class="text-sm text-green-600 font-semibold">@((Model.IsSiteAdmin) ? "global" : "mes projets")</div>
             </div>
 
             <div class="p-5 bg-white rounded-lg shadow flex items-center justify-between">
@@ -42,11 +51,13 @@
                         <i class="fas fa-tasks text-lg"></i>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-500">Tâches actives</p>
-                        <p class="text-2xl font-bold text-gray-800">1 342</p>
+                        <p class="text-sm text-gray-500">Tâches</p>
+                        <p class="text-2xl font-bold text-gray-800">
+                            @(Model.IsSiteAdmin? Model.TotalTasks: Model.MyTasks)
+                        </p>
                     </div>
                 </div>
-                <div class="text-sm text-amber-600 font-semibold">-0.6%</div>
+                <div class="text-sm text-amber-600 font-semibold">@((Model.IsSiteAdmin) ? "global" : "liées à vous")</div>
             </div>
 
             <div class="p-5 bg-white rounded-lg shadow">
@@ -56,39 +67,124 @@
                             <i class="fas fa-chart-line text-lg"></i>
                         </div>
                         <div>
-                            <p class="text-sm text-gray-500">Achèvement</p>
-                            <p class="text-2xl font-bold text-gray-800">76%</p>
+                            <p class="text-sm text-gray-500">Équipes</p>
+                            <p class="text-2xl font-bold text-gray-800">
+                                @(Model.IsSiteAdmin? Model.TotalTeams: Model.MyTeams)
+                            </p>
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-4">
-                    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                        <div class="h-2 bg-teal-600 rounded-full" style="width:76%"></div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-2">Objectif trimestriel : 80%</p>
-                </div>
             </div>
         </div>
     </section>
 
-    <!-- Contenu existant -->
-    <section>
-        <h2 class="text-3xl font-bold text-gray-800">Bienvenue sur le tableau de bord</h2>
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg p-6 shadow">
+            <h3 class="text-lg font-semibold mb-4">Répartition des tâches par statut</h3>
+            <canvas id="statusChart" height="200"></canvas>
+        </div>
 
-        <div class="grid md:grid-cols-3 gap-6 mt-6">
-            <div class="p-6 bg-white rounded-lg shadow">
-                <h3 class="font-semibold text-lg">Tâches en cours</h3>
-                <p class="text-sm text-gray-500 mt-2">3 tâches restantes</p>
-            </div>
-            <div class="p-6 bg-white rounded-lg shadow">
-                <h3 class="font-semibold text-lg">Projets</h3>
-                <p class="text-sm text-gray-500 mt-2">5 projets actifs</p>
-            </div>
-            <div class="p-6 bg-white rounded-lg shadow">
-                <h3 class="font-semibold text-lg">Notifications</h3>
-                <p class="text-sm text-gray-500 mt-2">3 nouvelles notifications</p>
-            </div>
+        <div class="bg-white rounded-lg p-6 shadow">
+            <h3 class="text-lg font-semibold mb-4">Répartition des tâches par priorité</h3>
+            <canvas id="priorityChart" height="200"></canvas>
         </div>
     </section>
+
+    <!-- reste de la page -->
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js non chargé.');
+                    return;
+                }
+
+                // Les variables JSON injectées côté Razor
+                const tasksByStatus = @Html.Raw(tasksByStatusJson ?? "[]");
+                const tasksByPriority = @Html.Raw(tasksByPriorityJson ?? "[]");
+
+                console.log('Dashboard: tasksByStatus =', tasksByStatus);
+                console.log('Dashboard: tasksByPriority =', tasksByPriority);
+
+                // Helpers
+                function renderNoData(containerId, message) {
+                    const canvas = document.getElementById(containerId);
+                    if (!canvas) return;
+                    const parent = canvas.parentElement;
+                    parent.innerHTML = '<div class="text-gray-500 py-8 text-center">' + message + '</div>';
+                }
+
+                // --- STATUS DOUGHNUT ---
+                if (Array.isArray(tasksByStatus) && tasksByStatus.length > 0) {
+                    const statusLabels = tasksByStatus.map(x => x.statut);
+                    const statusData = tasksByStatus.map(x => x.count);
+                    const statusColors = ['#f59e0b', '#10b981', '#ef4444', '#6b7280'];
+
+                    const ctxStatus = document.getElementById('statusChart')?.getContext('2d');
+                    if (ctxStatus) {
+                        new Chart(ctxStatus, {
+                            type: 'doughnut',
+                            data: {
+                                labels: statusLabels,
+                                datasets: [{
+                                    data: statusData,
+                                    backgroundColor: statusColors.slice(0, statusLabels.length)
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: { legend: { position: 'bottom' } }
+                            }
+                        });
+                    } else {
+                        console.warn('Canvas #statusChart introuvable.');
+                    }
+                } else {
+                    renderNoData('statusChart', 'Aucune donnée disponible pour la répartition par statut.');
+                }
+
+                // --- PRIORITY BAR ---
+                if (Array.isArray(tasksByPriority) && tasksByPriority.length > 0) {
+                    const prioLabels = tasksByPriority.map(x => x.priority);
+                    const prioData = tasksByPriority.map(x => x.count);
+                    const prioColors = prioLabels.map(l => {
+                        if (String(l).toUpperCase().includes('HAUTE')) return '#ef4444';
+                        if (String(l).toUpperCase().includes('MOYENNE')) return '#f59e0b';
+                        if (String(l).toUpperCase().includes('BASSE')) return '#10b981';
+                        return '#6b7280';
+                    });
+
+                    const ctxPrio = document.getElementById('priorityChart')?.getContext('2d');
+                    if (ctxPrio) {
+                        new Chart(ctxPrio, {
+                            type: 'bar',
+                            data: {
+                                labels: prioLabels,
+                                datasets: [{
+                                    label: 'Tâches',
+                                    data: prioData,
+                                    backgroundColor: prioColors
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                                plugins: { legend: { display: false } }
+                            }
+                        });
+                    } else {
+                        console.warn('Canvas #priorityChart introuvable.');
+                    }
+                } else {
+                    renderNoData('priorityChart', 'Aucune donnée disponible pour la répartition par priorité.');
+                }
+            } catch (err) {
+                console.error('Erreur lors du rendu des graphiques :', err);
+            }
+        });
+    </script>
+}
