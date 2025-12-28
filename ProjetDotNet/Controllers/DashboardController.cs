@@ -127,7 +127,8 @@ namespace ProjetDotNet.Controllers
                 TotalTasks = _context.Taches.AsNoTracking().Count(),
                 TotalTeams = _context.Equipes.AsNoTracking().Count(),
 
-                MyProjects = effectiveProjectIds.Count,
+                // <-- changement : ne compter que les projets dont l'utilisateur est membre directement
+                MyProjects = myProjectIds.Count,
                 MyTeams = myTeamIds.Count,
                 MyTasks = _context.Taches.AsNoTracking().Count(t =>
                     (t.AssigneeID.HasValue && t.AssigneeID.Value == current)
@@ -161,7 +162,7 @@ namespace ProjetDotNet.Controllers
                 orgIdsFromTeams,
                 projectsFromOrgs,
                 effectiveProjectIds,
-                myProjectsCount = effectiveProjectIds.Count,
+                myProjectsCount = myProjectIds.Count,
                 myTeamsCount = myTeamIds.Count
             });
 

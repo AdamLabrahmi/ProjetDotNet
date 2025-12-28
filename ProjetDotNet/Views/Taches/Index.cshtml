@@ -96,7 +96,7 @@
 </div>
 
 <!-- Recherche / filtres -->
-<div class="bg-white rounded-xl shadow-md p-4 mb-6">
+@* <div class="bg-white rounded-xl shadow-md p-4 mb-6">
     <div class="flex flex-col md:flex-row gap-4">
         <div class="flex-1">
             <div class="relative">
@@ -115,7 +115,7 @@
             </button>
         </div>
     </div>
-</div>
+</div> *@
 
 @if (Model != null && Model.Any())
 {
@@ -207,15 +207,11 @@
                                             <i class="fas fa-edit"></i>
                                         </a>
 
-                                        <form asp-action="Delete" asp-route-id="@t.TacheID" method="post" class="inline">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit"
-                                                    class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50"
-                                                    title="Supprimer" aria-label="Supprimer"
-                                                    onclick="return confirm('Supprimer cette tâche ?');">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </form>
+                                        <a asp-action="Delete" asp-route-id="@t.TacheID"
+                                           class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50"
+                                           title="Supprimer" aria-label="Supprimer">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
                                     }
                                 </div>
                             </td>

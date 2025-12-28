@@ -20,7 +20,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">@Model.Nom</h1>
-            <p class="text-sm text-gray-500">ID: @Model.ProjectID • Organisation: @(Model.Organisation?.Nom ?? "—")</p>
+            <p class="text-sm text-gray-500"> • Organisation: @(Model.Organisation?.Nom ?? "—")</p>
         </div>
         <div class="flex items-center space-x-2">
             @if (canEditProject)
@@ -88,7 +88,7 @@
                                         <i class="fas fa-user-edit mr-1"></i>Modifier
                                     </a>
 
-                                    <form asp-controller="MembreProjet" asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Retirer ce membre du projet ?');">
+                                    <form asp-controller="MembreProjet" asp-action="Delete" method="post" class="inline">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="projectId" value="@m.ProjectID" />
                                         <input type="hidden" name="userId" value="@m.UserID" />
@@ -152,14 +152,14 @@
         </div>
 
         <aside class="space-y-6">
-            <div class="bg-white rounded-xl shadow p-6">
+            @* <div class="bg-white rounded-xl shadow p-6">
                 <h4 class="font-semibold text-gray-800 mb-2">Résumé</h4>
                 <div class="text-sm text-gray-600">
                     <div class="mb-2"><strong>ID :</strong> @Model.ProjectID</div>
                     <div class="mb-2"><strong>Membres :</strong> @(Model.Membres?.Count() ?? 0)</div>
                     <div class="mb-2"><strong>Date création :</strong> @Model.DateCreation.ToString("dd MMMM yyyy HH:mm")</div>
                 </div>
-            </div>
+            </div> *@
 
             @if (canEditProject)
             {

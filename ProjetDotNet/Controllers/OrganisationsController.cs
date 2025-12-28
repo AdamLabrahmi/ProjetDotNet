@@ -28,10 +28,37 @@ namespace ProjetDotNet.Controllers
         public IActionResult Index()
         {
             var orgs = _context.Organisations
-                .Include(o => o.Admin)
-                .Include(o => o.Projets)
-                .Include(o => o.Equipes)
+                .AsNoTracking()
                 .ToList();
+
+            // members per org = union des membres d'équipes et des membres de projets,
+            // groupé par OrgID et comptant les UserID distincts (évite les doublons)
+            var membersPerOrg = _context.MembreEquipes
+                .AsNoTracking()
+                .Join(_context.Equipes.AsNoTracking(),
+                      me => me.TeamID, e => e.TeamID,
+                      (me, e) => new { OrgID = e.OrgID, UserID = me.UserID })
+                .Union(
+                    _context.MembreProjets
+                        .AsNoTracking()
+                        .Join(_context.Projets.AsNoTracking(),
+                              mp => mp.ProjectID, p => p.ProjectID,
+                              (mp, p) => new { OrgID = p.OrgID, UserID = mp.UserID })
+                )
+                .GroupBy(x => x.OrgID)
+                .Select(g => new { OrgID = g.Key, Count = g.Select(x => x.UserID).Distinct().Count() })
+                .ToDictionary(x => x.OrgID, x => x.Count);
+
+            // projets par organisation
+            var projectCounts = _context.Projets
+                .AsNoTracking()
+                .GroupBy(p => p.OrgID)
+                .Select(g => new { OrgID = g.Key, Count = g.Count() })
+                .ToDictionary(x => x.OrgID, x => x.Count);
+
+            ViewBag.MemberCounts = membersPerOrg;
+            ViewBag.ProjectCounts = projectCounts;
+
             return View("~/Views/Organisations/Index.cshtml", orgs);
         }
 
@@ -41,12 +68,6 @@ namespace ProjetDotNet.Controllers
                 .AsNoTracking()
                 .Include(o => o.Admin)
                     .ThenInclude(a => a.Utilisateur)
-                .Include(o => o.Equipes)
-                    .ThenInclude(e => e.Membres)
-                        .ThenInclude(me => me.Utilisateur)
-                .Include(o => o.Projets)
-                    .ThenInclude(p => p.Membres)
-                        .ThenInclude(mp => mp.Utilisateur)
                 .FirstOrDefault(o => o.OrgID == id);
 
             if (org == null)
@@ -55,10 +76,44 @@ namespace ProjetDotNet.Controllers
                 return NotFound();
             }
 
+            // Comptages fiables directement depuis la base
+            var teamCount = _context.Equipes.AsNoTracking().Count(e => e.OrgID == id);
+            var projectCount = _context.Projets.AsNoTracking().Count(p => p.OrgID == id);
+
+            // Nom de l'admin (fallback sur email si nom absent)
+            string adminDisplay = null;
+            if (org.AdminID != 0)
+            {
+                var admin = _context.Admins
+                    .AsNoTracking()
+                    .Include(a => a.Utilisateur)
+                    .FirstOrDefault(a => a.UserID == org.AdminID);
+                if (admin?.Utilisateur != null)
+                    adminDisplay = !string.IsNullOrWhiteSpace(admin.Utilisateur.Nom)
+                        ? admin.Utilisateur.Nom
+                        : admin.Utilisateur.Email;
+            }
+
+            // fournir les valeurs à la vue (ViewBag ou ViewModel)
+            ViewBag.TeamCount = teamCount;
+            ViewBag.ProjectCount = projectCount;
+            ViewBag.AdminDisplay = adminDisplay ?? "—";
+
             var currentUserId = AuthorizationHelper.GetCurrentUserId(User, _context);
             ViewBag.CanManageOrg = AuthorizationHelper.IsSiteAdmin(_context, currentUserId) || org.AdminID == currentUserId;
 
-            return View("~/Views/Organisations/Details.cshtml", org);
+            // Charger équipes/projets/membres pour la vue détaillée si nécessaire
+            var orgFull = _context.Organisations
+                .AsNoTracking()
+                .Include(o => o.Equipes)
+                    .ThenInclude(e => e.Membres)
+                        .ThenInclude(me => me.Utilisateur)
+                .Include(o => o.Projets)
+                    .ThenInclude(p => p.Membres)
+                        .ThenInclude(mp => mp.Utilisateur)
+                .FirstOrDefault(o => o.OrgID == id);
+
+            return View("~/Views/Organisations/Details.cshtml", orgFull ?? org);
         }
         public IActionResult Create()
         {
@@ -244,8 +299,6 @@ namespace ProjetDotNet.Controllers
         // =========================
         // DELETE (POST)
         // =========================
-        // ... (conserver le reste du fichier inchangé) ...
-
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
@@ -282,8 +335,6 @@ namespace ProjetDotNet.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
-        // ... (conserver le reste du fichier inchangé) ...
 
         private static string GenerateProjectKey(string orgName)
         {

@@ -78,7 +78,7 @@
 </div>
 
 <!-- Barre de recherche et filtres -->
-<div class="bg-white rounded-xl shadow-md p-4 mb-6">
+@* <div class="bg-white rounded-xl shadow-md p-4 mb-6">
     <div class="flex flex-col md:flex-row gap-4">
         <div class="flex-1">
             <div class="relative">
@@ -99,7 +99,7 @@
             </button>
         </div>
     </div>
-</div>
+</div> *@
 
 @if (Model != null && Model.Any())
 {
@@ -223,7 +223,7 @@
                                     @if (canAddMember)
                                     {
                                         <a asp-controller="MembreProjet" asp-action="Add" asp-route-projectId="@p.ProjectID"
-                                           class="p-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                           class="p-2 bg-teal-600 text-white rounded hover:bg-teal-700"
                                            title="Ajouter un membre">
                                             <i class="fas fa-user-plus"></i>
                                         </a>

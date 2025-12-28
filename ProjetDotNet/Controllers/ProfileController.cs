@@ -1,16 +1,18 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using ProjetDotNet.Data;
-using ProjetDotNet.Models;
-using ProjetDotNet.Models.ViewModels;
-using ProjetDotNet.Helpers;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ProjetDotNet.Data;
+using ProjetDotNet.Helpers;
+using ProjetDotNet.Models;
+using ProjetDotNet.Models.ViewModels;
 
 namespace ProjetDotNet.Controllers
 {
@@ -31,26 +33,77 @@ namespace ProjetDotNet.Controllers
         // GET: /Profile
         public IActionResult Index()
         {
-            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var user = _context.Utilisateurs.Find(userId);
-            if (user == null) return NotFound();
+            var current = AuthorizationHelper.GetCurrentUserId(User, _context);
+            if (current == 0) return Challenge();
+
+            // IDs d'équipes et de projets où l'utilisateur est membre
+            var myTeamIds = _context.MembreEquipes
+                .AsNoTracking()
+                .Where(me => me.UserID == current)
+                .Select(me => me.TeamID)
+                .Distinct()
+                .ToList();
+
+            var myProjectIds = _context.MembreProjets
+                .AsNoTracking()
+                .Where(mp => mp.UserID == current)
+                .Select(mp => mp.ProjectID)
+                .Distinct()
+                .ToList();
+
+            // Option : inclure projets appartenant aux organisations des équipes (facultatif)
+            var orgIdsFromTeams = _context.Equipes
+                .AsNoTracking()
+                .Where(e => myTeamIds.Contains(e.TeamID))
+                .Select(e => e.OrgID)
+                .Distinct()
+                .ToList();
+
+            var projectsFromOrgs = _context.Projets
+                .AsNoTracking()
+                .Where(p => orgIdsFromTeams.Contains(p.OrgID))
+                .Select(p => p.ProjectID)
+                .Distinct()
+                .ToList();
+
+            var effectiveProjectIds = myProjectIds.Union(projectsFromOrgs).Distinct().ToList();
+
+            // Comptages réels
+            var teamsCount = myTeamIds.Count;
+            var projectsCount = effectiveProjectIds.Count;
+
+            var tasksCount = _context.Taches
+                .AsNoTracking()
+                .Count(t =>
+                    (t.AssigneeID.HasValue && t.AssigneeID.Value == current)
+                    || (t.ProjectID.HasValue && effectiveProjectIds.Contains(t.ProjectID.Value))
+                );
+
+            // Récupérer données utilisateur pour affichage
+            var user = _context.Utilisateurs
+                .AsNoTracking()
+                .FirstOrDefault(u => u.UserID == current);
 
             var vm = new ProfileViewModel
             {
-                UserID = user.UserID,
-                Nom = user.Nom ?? "",
-                Email = user.Email,
-                Telephone = user.Telephone,
-                Avatar = user.Avatar
+                UserID = current,
+                Nom = user?.Nom,
+                Email = user?.Email,
+                Avatar = user?.Avatar,
+                Telephone = user?.Telephone,
+                ProjectsCount = projectsCount,
+                TasksCount = tasksCount,
+                TeamsCount = teamsCount
             };
 
-            return View(vm);
+            return View("~/Views/Profile/Index.cshtml", vm);
         }
 
         // POST: /Profile (mise à jour inline des infos + upload avatar)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Index(ProfileViewModel model, IFormFile? avatarFile)
+        [RequestSizeLimit(4 * 1024 * 1024)] // limite safe (4MB) ; adjuster si besoin
+        public async Task<IActionResult> Index(ProfileViewModel model, IFormFile? avatarFile)
         {
             if (!ModelState.IsValid)
             {
@@ -58,11 +111,21 @@ namespace ProjetDotNet.Controllers
                 return RedirectToAction("Index");
             }
 
-            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var user = _context.Utilisateurs.Find(userId);
+            int userId;
+            try
+            {
+                userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            }
+            catch
+            {
+                TempData["Error"] = "Utilisateur non authentifié.";
+                return RedirectToAction("Index");
+            }
+
+            var user = await _context.Utilisateurs.FindAsync(userId);
             if (user == null) return NotFound();
 
-            // Gérer l'upload si présent
+            // traitement du fichier avatar (si fourni)
             if (avatarFile != null && avatarFile.Length > 0)
             {
                 var allowedExt = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
@@ -80,37 +143,65 @@ namespace ProjetDotNet.Controllers
                     return RedirectToAction("Index");
                 }
 
-                var uploads = Path.Combine(_env.WebRootPath, "uploads", "avatars");
-                Directory.CreateDirectory(uploads);
-
-                var fileName = $"{Guid.NewGuid()}{ext}";
-                var filePath = Path.Combine(uploads, fileName);
-
-                using (var stream = System.IO.File.Create(filePath))
+                var webRoot = _env.WebRootPath;
+                if (string.IsNullOrEmpty(webRoot))
                 {
-                    avatarFile.CopyTo(stream);
+                    _logger.LogWarning("WebRootPath null, fallback sur CurrentDirectory pour stockage.");
+                    webRoot = Directory.GetCurrentDirectory();
                 }
 
-                // supprimer l'ancienne image si elle est locale (ex: /uploads/avatars/xxx)
+                var uploads = Path.Combine(webRoot, "uploads", "avatars");
+                try
+                {
+                    Directory.CreateDirectory(uploads);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Impossible de créer le dossier d'uploads {Uploads}", uploads);
+                    TempData["Error"] = "Impossible de préparer le dossier de stockage.";
+                    return RedirectToAction("Index");
+                }
+
+                var safeFileName = $"{Guid.NewGuid()}{ext}";
+                var filePath = Path.Combine(uploads, safeFileName);
+
+                try
+                {
+                    await using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+                    await avatarFile.CopyToAsync(stream);
+                    await stream.FlushAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Erreur lors de l'écriture du fichier avatar pour l'utilisateur {UserId}", userId);
+                    try { if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath); } catch { }
+                    TempData["Error"] = "Erreur lors du téléversement du fichier.";
+                    return RedirectToAction("Index");
+                }
+
+                // suppression ancienne image locale (silencieusement)
                 if (!string.IsNullOrEmpty(user.Avatar) && user.Avatar.StartsWith("/uploads/avatars/"))
                 {
-                    var oldRel = user.Avatar.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-                    var oldPath = Path.Combine(_env.WebRootPath, oldRel);
                     try
                     {
-                        if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+                        var oldRel = user.Avatar.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                        var oldPath = Path.Combine(webRoot, oldRel);
+                        if (System.IO.File.Exists(oldPath))
+                        {
+                            System.IO.File.Delete(oldPath);
+                        }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // ne pas échouer si suppression impossible
+                        _logger.LogWarning(ex, "Impossible de supprimer l'ancienne image avatar pour user {UserId}", userId);
                     }
                 }
 
-                user.Avatar = "/uploads/avatars/" + fileName;
+                user.Avatar = "/uploads/avatars/" + safeFileName;
             }
             else
             {
-                // si l'utilisateur a renseigné manuellement une URL dans le champ Avatar (facultatif)
+                // si l'utilisateur a renseigné manuellement une URL
                 user.Avatar = model.Avatar;
             }
 
@@ -119,15 +210,12 @@ namespace ProjetDotNet.Controllers
 
             try
             {
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                // log complet
                 _logger.LogError(ex, "Erreur lors de la mise à jour du profil pour l'utilisateur {UserId}", user.UserID);
-
-                // message utilisateur et retour sans plantage
-                TempData["Error"] = "Une erreur serveur est survenue lors de l'enregistrement de l'avatar.";
+                TempData["Error"] = "Une erreur serveur est survenue lors de l'enregistrement.";
                 return RedirectToAction("Index");
             }
 
@@ -135,7 +223,7 @@ namespace ProjetDotNet.Controllers
             return RedirectToAction("Index");
         }
 
-        // POST: /Profile/ChangePassword (inchangé)
+        // POST: /Profile/ChangePassword
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ChangePassword(string currentPassword, string newPassword, string confirmPassword)
@@ -160,18 +248,26 @@ namespace ProjetDotNet.Controllers
                 return RedirectToAction("Index");
             }
 
-            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            int userId;
+            try
+            {
+                userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            }
+            catch
+            {
+                TempData["Error"] = "Utilisateur non authentifié.";
+                return RedirectToAction("Index");
+            }
+
             var user = _context.Utilisateurs.Find(userId);
             if (user == null) return NotFound();
 
-            // Vérifier le mot de passe actuel (utilise ton helper de hash)
             if (!PasswordHelper.Verify(user.MotDePasseHash, currentPassword))
             {
                 TempData["Error"] = "Le mot de passe actuel est incorrect.";
                 return RedirectToAction("Index");
             }
 
-            // Mettre à jour le hash
             user.MotDePasseHash = PasswordHelper.Hash(newPassword);
             _context.SaveChanges();
 
@@ -180,25 +276,30 @@ namespace ProjetDotNet.Controllers
         }
 
         // GET: /Profile/Edit -> redirige vers Index
-        public IActionResult Edit()
-        {
-            return RedirectToAction("Index");
-        }
+        public IActionResult Edit() => RedirectToAction("Index");
 
-        // POST: /Profile/Edit (support upload)
+        // POST: /Profile/Edit (support upload) — utilise la même logique que POST Index
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(ProfileViewModel model, IFormFile? avatarFile)
+        [RequestSizeLimit(4 * 1024 * 1024)]
+        public async Task<IActionResult> Edit(ProfileViewModel model, IFormFile? avatarFile)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid) return View(model);
+
+            int userId;
+            try
             {
-                return View(model);
+                userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            }
+            catch
+            {
+                return Challenge();
             }
 
-            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var user = _context.Utilisateurs.Find(userId);
+            var user = await _context.Utilisateurs.FindAsync(userId);
             if (user == null) return NotFound();
 
+            // Reuse same upload logic
             if (avatarFile != null && avatarFile.Length > 0)
             {
                 var allowedExt = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
@@ -216,29 +317,37 @@ namespace ProjetDotNet.Controllers
                     return RedirectToAction("Edit");
                 }
 
-                var uploads = Path.Combine(_env.WebRootPath, "uploads", "avatars");
-                Directory.CreateDirectory(uploads);
+                var webRoot = _env.WebRootPath ?? Directory.GetCurrentDirectory();
+                var uploads = Path.Combine(webRoot, "uploads", "avatars");
+                try { Directory.CreateDirectory(uploads); } catch { }
 
-                var fileName = $"{Guid.NewGuid()}{ext}";
-                var filePath = Path.Combine(uploads, fileName);
+                var safeFileName = $"{Guid.NewGuid()}{ext}";
+                var filePath = Path.Combine(uploads, safeFileName);
 
-                using (var stream = System.IO.File.Create(filePath))
+                try
                 {
-                    avatarFile.CopyTo(stream);
+                    await using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+                    await avatarFile.CopyToAsync(stream);
+                    await stream.FlushAsync();
+                }
+                catch
+                {
+                    TempData["Error"] = "Erreur lors du téléversement du fichier.";
+                    return RedirectToAction("Edit");
                 }
 
                 if (!string.IsNullOrEmpty(user.Avatar) && user.Avatar.StartsWith("/uploads/avatars/"))
                 {
-                    var oldRel = user.Avatar.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-                    var oldPath = Path.Combine(_env.WebRootPath, oldRel);
                     try
                     {
+                        var oldRel = user.Avatar.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                        var oldPath = Path.Combine(webRoot, oldRel);
                         if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
                     }
                     catch { }
                 }
 
-                user.Avatar = "/uploads/avatars/" + fileName;
+                user.Avatar = "/uploads/avatars/" + safeFileName;
             }
             else
             {
@@ -247,7 +356,17 @@ namespace ProjetDotNet.Controllers
 
             user.Nom = model.Nom;
             user.Telephone = model.Telephone;
-            _context.SaveChanges();
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erreur lors de la mise à jour du profil (Edit) pour l'utilisateur {UserId}", userId);
+                TempData["Error"] = "Erreur serveur lors de l'enregistrement.";
+                return RedirectToAction("Edit");
+            }
 
             TempData["Message"] = "Profil mis à jour.";
             return RedirectToAction("Index");

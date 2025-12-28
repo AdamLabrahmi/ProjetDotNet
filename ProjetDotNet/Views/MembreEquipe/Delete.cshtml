@@ -4,29 +4,192 @@
     ViewBag.Title = "Retirer membre";
 }
 
-<div class="max-w-2xl mx-auto">
-    <h2 class="text-2xl font-bold mb-4">Retirer le membre de l'équipe</h2>
-
-    <div class="bg-white rounded-lg p-4 border mb-4">
-        <div class="mb-2">
-            <label class="text-sm text-gray-600">Utilisateur</label>
-            <div class="font-medium">@Model.Utilisateur?.Nom ?? "Utilisateur inconnu"</div>
-            <div class="text-sm text-gray-500">@Model.Utilisateur?.Email</div>
+<div class="max-w-4xl mx-auto">
+    <!-- En-tête avec avertissement -->
+    <div class="mb-6">
+        <div class="flex items-center space-x-3 mb-2">
+            <i class="fas fa-user-times text-red-600 text-3xl"></i>
+            <h2 class="text-3xl font-bold text-red-600">Retirer le membre de l'équipe</h2>
         </div>
-        <div>
-            <label class="text-sm text-gray-600">Rôle actuel</label>
-            <div class="font-medium">@Model.Role.ToString()</div>
+        <p class="text-gray-600">Cette action retirera le membre et toutes ses assignations</p>
+    </div>
+
+    <!-- Bannière d'avertissement -->
+    <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg mb-6">
+        <div class="flex items-start">
+            <i class="fas fa-exclamation-triangle text-red-500 text-2xl mr-4 mt-1"></i>
+            <div class="flex-1">
+                <h3 class="text-red-800 font-bold text-lg mb-2">⚠️ Attention : Retrait d'un membre</h3>
+                <p class="text-red-700 mb-3">
+                    Vous êtes sur le point de retirer ce membre de l'équipe. Cette action :
+                </p>
+                <ul class="text-red-700 space-y-1 ml-4">
+                    <li class="flex items-center space-x-2">
+                        <i class="fas fa-times-circle text-xs"></i>
+                        <span>Retirera le membre de l'équipe</span>
+                    </li>
+                    <li class="flex items-center space-x-2">
+                        <i class="fas fa-times-circle text-xs"></i>
+                        <span>Supprimera toutes ses assignations de tâches</span>
+                    </li>
+                    <li class="flex items-center space-x-2">
+                        <i class="fas fa-times-circle text-xs"></i>
+                        <span>Révoquera ses permissions dans l'équipe</span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 
-    <form asp-controller="MembreEquipe" asp-action="Delete" method="post" onsubmit="return confirm('Retirer ce membre de l\\'équipe ?');">
-        @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="TeamID" />
-        <input type="hidden" asp-for="UserID" />
-
-        <div class="flex gap-2">
-            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">Retirer</button>
-            <a asp-controller="Equipes" asp-action="Details" asp-route-id="@Model.TeamID" class="px-4 py-2 border rounded text-gray-700">Annuler</a>
+    <!-- Carte du membre à retirer -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+        <!-- En-tête rouge -->
+        <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
+            <div class="flex items-center space-x-4 text-white">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span class="text-2xl font-bold">
+                        @(Model.Utilisateur?.Nom?.Substring(0, 1).ToUpper() ?? "U")
+                    </span>
+                </div>
+                <div>
+                    <p class="text-red-100 text-sm font-medium">Membre à retirer</p>
+                    <h3 class="text-2xl font-bold">@(Model.Utilisateur?.Nom ?? "Utilisateur inconnu")</h3>
+                </div>
+            </div>
         </div>
-    </form>
+
+        <!-- Contenu -->
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Email -->
+                <div>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+                    <div class="mt-2 flex items-center space-x-2">
+                        <i class="fas fa-envelope text-gray-400"></i>
+                        <span class="text-gray-800">@(Model.Utilisateur?.Email ?? "Non disponible")</span>
+                    </div>
+                </div>
+
+                <!-- Rôle -->
+                <div>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Rôle actuel</label>
+                    <div class="mt-2">
+                        @switch (Model.Role.ToString())
+                        {
+                            case "Membre":
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold inline-flex items-center">
+                                    <i class="fas fa-user mr-1"></i>Membre
+                                </span>
+                                break;
+                            case "ScrumMaster":
+                                <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold inline-flex items-center">
+                                    <i class="fas fa-user-tie mr-1"></i>Scrum Master
+                                </span>
+                                break;
+                            case "Admin":
+                                <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-semibold inline-flex items-center">
+                                    <i class="fas fa-crown mr-1"></i>Admin
+                                </span>
+                                break;
+                            default:
+                                <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                    @Model.Role.ToString()
+                                </span>
+                                break;
+                        }
+                    </div>
+                </div>
+
+                <!-- IDs -->
+                <div>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ID Équipe</label>
+                    <p class="text-gray-800 font-medium mt-2">@Model.TeamID</p>
+                </div>
+
+                <div>
+                    <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">ID Utilisateur</label>
+                    <p class="text-gray-800 font-medium mt-2">@Model.UserID</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulaire de confirmation -->
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-check-circle text-gray-600 mr-2"></i>
+            Confirmation requise
+        </h3>
+        <p class="text-gray-600 mb-6">
+            Pour confirmer le retrait, tapez le nom du membre ci-dessous :
+        </p>
+
+        <!-- Champ de confirmation -->
+        <div class="mb-6">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                Tapez "<span class="text-red-600 font-bold">@(Model.Utilisateur?.Nom ?? "Utilisateur")</span>" pour confirmer
+            </label>
+            <input type="text"
+                   id="confirmName"
+                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition duration-200"
+                   placeholder="Nom du membre" />
+        </div>
+
+        <form asp-controller="MembreEquipe" asp-action="Delete" method="post" id="deleteForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="TeamID" />
+            <input type="hidden" asp-for="UserID" />
+
+            <div class="flex gap-3">
+                <button type="submit"
+                        id="deleteButton"
+                        disabled
+                        class="flex-1 bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 transition duration-200 shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300 flex items-center justify-center space-x-2">
+                    <i class="fas fa-user-times"></i>
+                    <span>Retirer définitivement</span>
+                </button>
+                <a asp-controller="Equipes" asp-action="Details" asp-route-id="@Model.TeamID"
+                   class="flex-1 bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center justify-center space-x-2">
+                    <i class="fas fa-times"></i>
+                    <span>Annuler</span>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Information supplémentaire -->
+    <div class="bg-blue-50 rounded-xl p-4 mt-6 border border-blue-200">
+        <div class="flex items-start space-x-3">
+            <i class="fas fa-info-circle text-blue-600 text-lg mt-0.5"></i>
+            <div class="text-sm text-blue-800">
+                <p class="font-semibold mb-1">Note</p>
+                <p>Le membre pourra être réinvité ultérieurement si nécessaire.</p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    // Validation du nom pour activer le bouton de suppression
+    const confirmInput = document.getElementById('confirmName');
+    const deleteButton = document.getElementById('deleteButton');
+    const expectedName = '@(Model.Utilisateur?.Nom ?? "Utilisateur")';
+
+    function validateInput() {
+        if (confirmInput.value === expectedName) {
+            deleteButton.disabled = false;
+            deleteButton.classList.remove('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+        } else {
+            deleteButton.disabled = true;
+            deleteButton.classList.add('disabled:bg-gray-300', 'disabled:cursor-not-allowed');
+        }
+    }
+
+    // Écouter plusieurs événements pour capturer toutes les façons de modifier le champ
+    confirmInput.addEventListener('input', validateInput);
+    confirmInput.addEventListener('change', validateInput);
+    confirmInput.addEventListener('paste', function() {
+        setTimeout(validateInput, 10);
+    });
+    confirmInput.addEventListener('keyup', validateInput);
+</script>

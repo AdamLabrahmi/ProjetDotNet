@@ -141,7 +141,7 @@
     <div class="space-y-6">
 
         <!-- Carte d'informations -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
+        @* <div class="bg-white rounded-xl shadow-lg p-6">
             <div class="flex items-center space-x-3 mb-4">
                 <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
                     <i class="fas fa-info-circle text-teal-600 text-lg"></i>
@@ -162,7 +162,7 @@
                         <span class="text-gray-800 font-mono bg-gray-100 px-2 py-1 rounded">@Model.CleProjet</span>
                     </div>
                 }
-                @* @if (Model.DateCreation.HasValue)
+                @if (Model.DateCreation.HasValue)
                 {
                     <div class="flex items-start space-x-2">
                         <i class="fas fa-calendar-plus text-teal-600 mt-0.5"></i>
@@ -171,12 +171,12 @@
                             <span class="text-gray-800 block">@Model.DateCreation.Value.ToString("dd MMMM yyyy")</span>
                         </div>
                     </div>
-                } *@
+                }
             </div>
-        </div>
+        </div> *@
 
         <!-- Carte statistiques -->
-        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
+        @* <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
             <div class="flex items-center space-x-3 mb-4">
                 <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
                     <i class="fas fa-chart-bar text-white text-lg"></i>
@@ -200,7 +200,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> *@
 
         <!-- Carte d'avertissement -->
         <div class="bg-amber-50 rounded-xl shadow-lg p-6 border border-amber-200">

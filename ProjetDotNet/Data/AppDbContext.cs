@@ -38,9 +38,9 @@ namespace ProjetDotNet.Data
 
             modelBuilder.Entity<ProjetDotNet.Models.Tache>(entity =>
             {
-                entity.ToTable("tache"); // déjà présent via [Table] mais explicite ici
+                entity.ToTable("tache"); 
                 entity.HasKey(e => e.TacheID);
-                entity.Property(e => e.TacheID).HasColumnName("tache_id");         // <-- adapter si nécessaire
+                entity.Property(e => e.TacheID).HasColumnName("tache_id");         
                 entity.Property(e => e.Titre).HasColumnName("titre");
                 entity.Property(e => e.Description).HasColumnName("description");
                 entity.Property(e => e.EstimationDur).HasColumnName("estimation_dur");

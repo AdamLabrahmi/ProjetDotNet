@@ -5,32 +5,172 @@
     ViewBag.Title = "Modifier membre";
 }
 
-<div class="max-w-3xl mx-auto">
-    <h2 class="text-2xl font-bold mb-4">Modifier le membre</h2>
-
-    <form asp-controller="MembreEquipe" asp-action="Edit" method="post" class="space-y-4">
-        @Html.AntiForgeryToken()
-
-        <input type="hidden" asp-for="TeamID" />
-        <input type="hidden" asp-for="UserID" />
-
-        <div class="bg-white rounded-lg p-4 border">
-            <div class="mb-3">
-                <label class="text-sm text-gray-600 block">Utilisateur</label>
-                <div class="font-medium">@Model.Utilisateur?.Nom ?? "Utilisateur inconnu"</div>
-                <div class="text-sm text-gray-500">@Model.Utilisateur?.Email</div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Rôle</label>
-                <select asp-for="Role" asp-items="ViewBag.Roles" class="w-full px-3 py-2 border rounded"></select>
-                <span asp-validation-for="Role" class="text-red-500 text-sm"></span>
-            </div>
-        </div>
-
-        <div class="flex gap-2">
-            <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded">Enregistrer</button>
-            <a asp-controller="Equipes" asp-action="Details" asp-route-id="@Model.TeamID" class="px-4 py-2 border rounded text-gray-700">Annuler</a>
-        </div>
-    </form>
+<!-- En-tête -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Modifier le membre</h2>
+    <p class="text-gray-600">Modifiez le rôle du membre dans l'équipe</p>
 </div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Formulaire principal (2/3) -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form asp-controller="MembreEquipe" asp-action="Edit" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="TeamID" />
+                <input type="hidden" asp-for="UserID" />
+
+                @* Bloc résumé de validation *@
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <h3 class="text-red-800 font-semibold mb-2">Erreurs de validation</h3>
+                                <div asp-validation-summary="All" class="text-red-700 text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Informations utilisateur -->
+                <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-6 border border-teal-200">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-user text-teal-600 mr-2"></i>
+                        Utilisateur
+                    </h3>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-full flex items-center justify-center">
+                            <span class="text-white font-bold text-2xl">
+                                @(Model.Utilisateur?.Nom?.Substring(0, 1).ToUpper() ?? "U")
+                            </span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-xl text-gray-800">@(Model.Utilisateur?.Nom ?? "Utilisateur")</p>
+                            <p class="text-sm text-gray-600 flex items-center mt-1">
+                                <i class="fas fa-envelope mr-2 text-teal-600"></i>
+                                @(Model.Utilisateur?.Email ?? "Non disponible")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rôle -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-user-tag text-teal-600 mr-2"></i>
+                        Rôle dans l'équipe <span class="text-red-500">*</span>
+                    </label>
+                    <select asp-for="Role"
+                            asp-items="ViewBag.Roles"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200">
+                    </select>
+                    <span asp-validation-for="Role" class="text-red-500 text-sm mt-1 block"></span>
+                    <p class="text-gray-500 text-xs mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Le rôle détermine les permissions du membre dans l'équipe
+                    </p>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
+                    <button type="submit"
+                            class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center space-x-2">
+                        <i class="fas fa-save"></i>
+                        <span>Enregistrer</span>
+                    </button>
+                    <a asp-controller="Equipes" asp-action="Details" asp-route-id="@Model.TeamID"
+                       class="bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Annuler</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Colonne droite - Informations (1/3) -->
+    <div class="space-y-6">
+
+        <!-- Carte d'informations -->
+        @* <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-info-circle text-teal-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Informations</h3>
+            </div>
+            <div class="space-y-3 text-sm text-gray-600">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-users text-teal-600"></i>
+                    <span class="font-medium">Équipe ID:</span>
+                    <span class="text-gray-800">@Model.TeamID</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-user text-teal-600"></i>
+                    <span class="font-medium">User ID:</span>
+                    <span class="text-gray-800">@Model.UserID</span>
+                </div>
+            </div>
+        </div> *@
+
+        <!-- Carte rôles disponibles -->
+        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-white text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Rôles disponibles</h3>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="bg-white rounded-lg p-3">
+                    <p class="font-semibold text-gray-800 mb-1">👤 Membre</p>
+                    <p class="text-xs text-gray-600">Accès basique aux projets</p>
+                </div>
+                <div class="bg-white rounded-lg p-3">
+                    <p class="font-semibold text-gray-800 mb-1">🎯 Scrum Master</p>
+                    <p class="text-xs text-gray-600">Gestion des sprints et tâches</p>
+                </div>
+                <div class="bg-white rounded-lg p-3">
+                    <p class="font-semibold text-gray-800 mb-1">👑 Admin</p>
+                    <p class="text-xs text-gray-600">Accès complet à l'équipe</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte d'avertissement -->
+        <div class="bg-amber-50 rounded-xl shadow-lg p-6 border border-amber-200">
+            <div class="flex items-center space-x-3 mb-3">
+                <i class="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
+                <h3 class="font-bold text-gray-800">Attention</h3>
+            </div>
+            <p class="text-sm text-gray-700">
+                La modification du rôle changera immédiatement les permissions du membre dans l'équipe.
+            </p>
+        </div>
+
+        <!-- Carte actions dangereuses -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-red-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-user-minus text-red-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Zone dangereuse</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                Retirer ce membre de l'équipe supprimera toutes ses assignations.
+            </p>
+            <a asp-controller="MembreEquipe" asp-action="Delete" asp-route-teamId="@Model.TeamID" asp-route-userId="@Model.UserID"
+               class="w-full bg-red-600 text-white font-semibold px-4 py-3 rounded-lg hover:bg-red-700 transition duration-200 flex items-center justify-center space-x-2">
+                <i class="fas fa-user-times"></i>
+                <span>Retirer de l'équipe</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

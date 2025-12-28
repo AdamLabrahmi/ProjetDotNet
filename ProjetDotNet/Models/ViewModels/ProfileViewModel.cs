@@ -6,14 +6,19 @@ namespace ProjetDotNet.Models.ViewModels
     {
         public int UserID { get; set; }
 
-        [Required]
-        public string Nom { get; set; }
+        public string? Nom { get; set; }
 
-        [Required, EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
-        public string? Telephone { get; set; }
         public string? Avatar { get; set; }
-        public DateTime? DateInscription { get; set; }
+
+        // Nouveau : numéro de téléphone
+        public string? Telephone { get; set; }
+
+        // Comptages réels
+        public int ProjectsCount { get; set; }
+        public int TasksCount { get; set; }
+        public int TeamsCount { get; set; }
+
     }
 }

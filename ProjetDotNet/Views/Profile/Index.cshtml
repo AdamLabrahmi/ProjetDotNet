@@ -5,14 +5,14 @@
 }
 
 <!-- Affichage messages -->
-@if (TempData["Message"] != null)
+@* @if (TempData["Message"] != null)
 {
     <div class="max-w-3xl mx-auto mb-4 p-3 bg-green-100 text-green-800 rounded">@TempData["Message"]</div>
 }
 @if (TempData["Error"] != null)
 {
     <div class="max-w-3xl mx-auto mb-4 p-3 bg-red-100 text-red-800 rounded">@TempData["Error"]</div>
-}
+} *@
 
 <!-- Header avec bannière -->
 <div class="mb-6">
@@ -140,17 +140,8 @@
             </div>
         </form>
 
-        <!-- Carte Activité récente (inchangée) -->
-        <div class="bg-white rounded-2xl shadow-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <i class="fas fa-chart-line text-teal-600 mr-3"></i>
-                Activité récente
-            </h2>
-
-            <div class="space-y-4">
-                <!-- ... activités ... -->
-            </div>
-        </div>
+        
+        
     </div>
 
     <!-- Colonne droite - Statistiques et actions -->
@@ -172,7 +163,7 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Projets</p>
-                            <p class="text-2xl font-bold text-gray-800">12</p>
+                            <p class="text-2xl font-bold text-gray-800">@Model.ProjectsCount</p>
                         </div>
                     </div>
                     <i class="fas fa-arrow-up text-teal-600"></i>
@@ -186,7 +177,7 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Tâches</p>
-                            <p class="text-2xl font-bold text-gray-800">48</p>
+                            <p class="text-2xl font-bold text-gray-800">@Model.TasksCount</p>
                         </div>
                     </div>
                     <i class="fas fa-arrow-up text-emerald-600"></i>
@@ -200,7 +191,7 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Équipes</p>
-                            <p class="text-2xl font-bold text-gray-800">5</p>
+                            <p class="text-2xl font-bold text-gray-800">@Model.TeamsCount</p>
                         </div>
                     </div>
                     <i class="fas fa-arrow-right text-cyan-600"></i>
@@ -217,39 +208,10 @@
                     <i class="fas fa-key"></i>
                     <span class="font-medium">Changer le mot de passe</span>
                 </button>
-
-                <button type="button" class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
-                    <i class="fas fa-bell"></i>
-                    <span class="font-medium">Notifications</span>
-                </button>
-
-                <button type="button" class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
-                    <i class="fas fa-shield-alt"></i>
-                    <span class="font-medium">Sécurité</span>
-                </button>
-
-                <button type="button" class="w-full flex items-center space-x-3 p-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition">
-                    <i class="fas fa-download"></i>
-                    <span class="font-medium">Télécharger mes données</span>
-                </button>
             </div>
         </div>
 
-        <!-- Carte Badge -->
-        <div class="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl shadow-lg p-6 text-white">
-            <div class="flex items-center justify-between mb-4">
-                <i class="fas fa-trophy text-4xl"></i>
-                <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-sm font-semibold">
-                    Niveau 5
-                </span>
-            </div>
-            <h3 class="text-xl font-bold mb-2">Super Contributeur</h3>
-            <p class="text-sm opacity-90">Vous avez terminé 50 tâches ce mois-ci ! Continuez comme ça ! 🎉</p>
-            <div class="mt-4 bg-white bg-opacity-20 rounded-full h-2">
-                <div class="bg-white h-2 rounded-full" style="width: 75%"></div>
-            </div>
-            <p class="text-xs mt-2 opacity-75">75% vers le niveau suivant</p>
-        </div>
+       
     </div>
 </div>
 
