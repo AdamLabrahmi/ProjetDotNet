@@ -35,269 +35,109 @@
         TypeTache.TASK => "fa-tasks",
         _ => "fa-circle"
     };
+
+    // Badge de statut
+    string statutBadge = Model.Statut switch
+    {
+        StatutTache.A_FAIRE => "bg-gray-100 text-gray-800",
+        StatutTache.EN_COURS => "bg-yellow-100 text-yellow-800",
+        StatutTache.TERMINE => "bg-green-100 text-green-800",
+        _ => "bg-gray-100 text-gray-800"
+    };
+
+    string priorityColor = Model.Priorite switch
+    {
+        PrioriteTache.HAUTE => "text-red-600",
+        PrioriteTache.MOYENNE => "text-yellow-600",
+        PrioriteTache.BASSE => "text-blue-600",
+        _ => "text-gray-600"
+    };
 }
 
-<div class="max-w-6xl mx-auto">
-    <!-- En-tête avec bannière -->
-    <div class="mb-6">
-        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-8 shadow-xl">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4 text-white">
-                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                        <i class="fas @typeIcon text-2xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-purple-100 text-sm font-medium">@Model.Type</p>
-                        <h1 class="text-3xl font-bold">@Model.Titre</h1>
-                        <p class="text-purple-100 text-sm mt-1">
-                            @if (Model.Projet != null)
-                            {
-                                <span class="mx-2">•</span>
-                                <i class="fas fa-folder mr-1"></i>
-                                @Model.Projet.Nom
-                            }
-                        </p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                    @if (canManageThisTask)
-                    {
-                        <a asp-action="Edit" asp-route-id="@Model.TacheID"
-                           class="bg-white text-purple-600 px-6 py-3 rounded-lg hover:bg-gray-100 transition shadow-md font-semibold flex items-center space-x-2">
-                            <i class="fas fa-edit"></i>
-                            <span>Modifier</span>
-                        </a>
-                    }
-                    @switch (Model.Statut)
-                    {
-                        case StatutTache.A_FAIRE:
-                            <span class="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg text-sm font-bold flex items-center space-x-2">
-                                <i class="fas fa-circle"></i>
-                                <span>À faire</span>
-                            </span>
-                            break;
-                        case StatutTache.EN_COURS:
-                            <span class="bg-yellow-400 text-yellow-900 px-4 py-2 rounded-lg text-sm font-bold flex items-center space-x-2">
-                                <i class="fas fa-spinner"></i>
-                                <span>En cours</span>
-                            </span>
-                            break;
-                        case StatutTache.TERMINE:
-                            <span class="bg-green-400 text-green-900 px-4 py-2 rounded-lg text-sm font-bold flex items-center space-x-2">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Terminé</span>
-                            </span>
-                            break;
-                        default:
-                            <span class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-bold">
-                                @Model.Statut
-                            </span>
-                            break;
-                    }
-                </div>
-            </div>
+<div class="max-w-6xl mx-auto space-y-6">
+    <!-- En-tête simplifié -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">@Model.Titre</h1>
+            <p class="text-sm text-gray-500">
+                <i class="fas @typeIcon mr-1"></i>@Model.Type
+                @if (Model.Projet != null)
+                {
+                    <span class="mx-2">•</span>
+                    <span>Projet: @Model.Projet.Nom</span>
+                }
+            </p>
+        </div>
+        <div class="flex items-center space-x-2">
+            @if (canManageThisTask)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.TacheID"
+                   class="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700">
+                    <i class="fas fa-edit mr-2"></i>Modifier
+                </a>
+            }
+            <a asp-action="Index"
+               class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                Retour
+            </a>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         <!-- Colonne principale (2/3) -->
         <div class="lg:col-span-2 space-y-6">
 
-            <!-- Carte Description -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                    <i class="fas fa-align-left text-purple-600 mr-3"></i>
-                    Description
-                </h2>
-                @if (!string.IsNullOrEmpty(Model.Description))
-                {
-                    <p class="text-gray-700 leading-relaxed whitespace-pre-wrap text-lg">@Model.Description</p>
-                }
-                else
-                {
-                    <div class="bg-gray-50 rounded-lg p-6 text-center">
-                        <i class="fas fa-info-circle text-gray-400 text-3xl mb-3"></i>
-                        <p class="text-gray-400 italic">Aucune description définie pour cette tâche</p>
+            <!-- Détails principaux -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Détails</h2>
+                <div class="text-sm text-gray-700 space-y-2">
+                    <div class="flex items-center">
+                        <strong class="w-32">Statut :</strong>
+                        <span class="@statutBadge px-3 py-1 rounded-full text-xs font-semibold">
+                            @Model.Statut
+                        </span>
                     </div>
-                }
-            </div>
-
-            <!-- Carte Détails techniques -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                    <i class="fas fa-sliders-h text-purple-600 mr-3"></i>
-                    Détails techniques
-                </h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Priorité -->
-                    <div class="bg-purple-50 rounded-xl p-6 border-l-4 border-purple-500">
-                        <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Priorité</label>
-                        <div class="mt-2 flex items-center space-x-2">
-                            @{
-                                var priorityIcon = Model.Priorite switch
-                                {
-                                    PrioriteTache.HAUTE => "fa-arrow-up text-orange-600",
-                                    PrioriteTache.MOYENNE => "fa-minus text-yellow-600",
-                                    PrioriteTache.BASSE => "fa-arrow-down text-blue-600",
-                                    _ => "fa-circle text-gray-600"
-                                };
-                            }
-                            <i class="fas @priorityIcon text-2xl"></i>
-                            <span class="text-gray-800 font-semibold text-lg">@Model.Priorite</span>
+                    <div class="flex items-center">
+                        <strong class="w-32">Priorité :</strong>
+                        <span class="@priorityColor font-semibold">@Model.Priorite</span>
+                    </div>
+                    <div class="flex items-center">
+                        <strong class="w-32">Type :</strong>
+                        <span><i class="fas @typeIcon mr-1"></i>@Model.Type</span>
+                    </div>
+                    <div class="flex items-center">
+                        <strong class="w-32">Estimation :</strong>
+                        <span>@Model.EstimationDur h</span>
+                    </div>
+                    <div class="flex items-center">
+                        <strong class="w-32">Temps restant :</strong>
+                        <span>@Model.TempsRestant h</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="pt-3 border-t">
+                            <strong>Description :</strong>
+                            <p class="mt-2 text-gray-600 whitespace-pre-wrap">@Model.Description</p>
                         </div>
-                    </div>
-
-                    <!-- Type -->
-                    <div class="bg-indigo-50 rounded-xl p-6 border-l-4 border-indigo-500">
-                        <label class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Type</label>
-                        <div class="mt-2 flex items-center space-x-2">
-                            <i class="fas @typeIcon text-indigo-600 text-2xl"></i>
-                            <span class="text-gray-800 font-semibold text-lg">@Model.Type</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Estimations -->
-                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 flex items-center">
-                                <i class="fas fa-clock mr-2 text-purple-600"></i>
-                                Estimation
-                            </span>
-                            <span class="text-2xl font-bold text-gray-800">@Model.EstimationDur h</span>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600 flex items-center">
-                                <i class="fas fa-hourglass-half mr-2 text-indigo-600"></i>
-                                Temps restant
-                            </span>
-                            <span class="text-2xl font-bold text-gray-800">@Model.TempsRestant h</span>
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
 
-            <!-- Carte Sprint associé -->
-            @if (Model.Sprint != null)
-            {
-                <div class="bg-white rounded-xl shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                        <i class="fas fa-running text-purple-600 mr-3"></i>
-                        Sprint associé
-                    </h2>
+            <!-- Assignation -->
+            <div class="bg-white rounded-xl shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Assignation</h3>
 
-                    <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
-                        <div class="flex items-center space-x-4 mb-4">
-                            <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-running text-white"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-800">@Model.Sprint.Nom</h3>
-                                <p class="text-sm text-gray-600">
-                                    @Model.Sprint.DateDebut.ToString("dd MMM yyyy") - @Model.Sprint.DateFin.ToString("dd MMM yyyy")
-                                </p>
-                            </div>
-                        </div>
-                        <a asp-controller="Sprints" asp-action="Details" asp-route-id="@Model.Sprint.SprintID"
-                           class="mt-4 w-full bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 transition flex items-center justify-center space-x-2">
-                            <i class="fas fa-external-link-alt"></i>
-                            <span class="font-medium">Voir le sprint</span>
-                        </a>
-                    </div>
-                </div>
-            }
-
-            <!-- Carte Projet associé -->
-            @if (Model.Projet != null)
-            {
-                <div class="bg-white rounded-xl shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                        <i class="fas fa-project-diagram text-purple-600 mr-3"></i>
-                        Projet associé
-                    </h2>
-
-                    <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-6 border border-teal-200">
-                        <div class="flex items-center space-x-4 mb-4">
-                            <div class="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                                <span class="text-white font-bold">@(Model.Projet.CleProjet ?? "P")</span>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-800">@Model.Projet.Nom</h3>
-                                <p class="text-sm text-gray-600">@(Model.Projet.CleProjet ?? "Aucune clé")</p>
-                            </div>
-                        </div>
-                        <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Projet.ProjectID"
-                           class="mt-4 w-full bg-teal-600 text-white text-center py-2 rounded-lg hover:bg-teal-700 transition flex items-center justify-center space-x-2">
-                            <i class="fas fa-external-link-alt"></i>
-                            <span class="font-medium">Voir le projet</span>
-                        </a>
-                    </div>
-                </div>
-            }
-
-            <!-- Carte Activités & Commentaires -->
-            <div class="bg-white rounded-xl shadow-lg p-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                    <i class="fas fa-comments text-purple-600 mr-3"></i>
-                    Activités & Commentaires
-                </h2>
-                @if (Model.Commentaires != null && Model.Commentaires.Any())
-                {
-                    <div class="space-y-4">
-                        @foreach (var c in Model.Commentaires.OrderByDescending(cm => cm.DateCreation))
-                        {
-                            <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white font-bold text-sm">@(c.Utilisateur?.Nom?.Substring(0, 1) ?? "?")</span>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="font-semibold text-gray-800">@(c.Utilisateur?.Nom ?? c.Utilisateur?.Email ?? "Utilisateur")</span>
-                                            <span class="text-xs text-gray-500">@c.DateCreation.ToString("dd MMM yyyy HH:mm")</span>
-                                        </div>
-                                        <p class="text-gray-700 text-sm leading-relaxed">@c.Contenu</p>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="bg-gray-50 rounded-lg p-8 text-center">
-                        <i class="fas fa-comment-slash text-gray-400 text-3xl mb-3"></i>
-                        <p class="text-gray-400 italic">Aucun commentaire pour cette tâche</p>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <!-- Colonne droite (1/3) -->
-        <div class="space-y-6">
-
-            <!-- Carte Assignation -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-user-tag text-purple-600 mr-2"></i>
-                    Assignation
-                </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assigné à</label>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Assigné à</label>
                         @if (Model.Assignee != null)
                         {
-                            <div class="mt-2 flex items-center space-x-3">
-                                <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center">
-                                    <span class="text-white font-bold text-sm">@Model.Assignee.Nom.Substring(0, 1)</span>
+                            <div class="flex items-center space-x-3 mt-2 p-3 rounded-lg border border-gray-100">
+                                <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white font-semibold">
+                                    @Model.Assignee.Nom.Substring(0, 1).ToUpper()
                                 </div>
                                 <div>
-                                    <div class="font-semibold text-gray-800">@Model.Assignee.Nom</div>
+                                    <div class="font-medium text-gray-800">@Model.Assignee.Nom</div>
                                     <div class="text-xs text-gray-500">@Model.Assignee.Email</div>
                                 </div>
                             </div>
@@ -309,15 +149,19 @@
                     </div>
 
                     <div class="border-t pt-4">
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Créé par</label>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Créé par</label>
                         @if (Model.Createur != null)
                         {
-                            <div class="mt-2 flex items-center space-x-3">
+                            <div class="flex items-center space-x-3 mt-2">
                                 <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                                    <span class="text-gray-700 font-bold text-xs">@Model.Createur.Nom.Substring(0, 1)</span>
+                                    <span class="text-gray-700 font-semibold text-xs">@Model.Createur.Nom.Substring(0, 1).ToUpper()</span>
                                 </div>
                                 <div>
                                     <div class="font-medium text-gray-800 text-sm">@Model.Createur.Nom</div>
+                                    <div class="text-xs text-gray-500">
+                                        <i class="fas fa-calendar-alt mr-1"></i>
+                                        @Model.DateCreation.ToString("dd MMMM yyyy HH:mm")
+                                    </div>
                                 </div>
                             </div>
                         }
@@ -325,58 +169,180 @@
                         {
                             <div class="mt-2 text-gray-500 italic text-sm">Inconnu</div>
                         }
-                        <div class="mt-2 text-xs text-gray-500">
-                            <i class="fas fa-calendar-alt mr-1"></i>
-                            @Model.DateCreation.ToString("dd MMMM yyyy HH:mm")
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Carte Actions rapides -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-bolt text-purple-600 mr-2"></i>
-                    Actions rapides
-                </h3>
-                <div class="space-y-3">
-                    @if (canManageThisTask)
-                    {
-                        <a asp-action="Edit" asp-route-id="@Model.TacheID"
-                           class="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition flex items-center justify-center space-x-2">
-                            <i class="fas fa-edit"></i>
-                            <span class="font-medium">Modifier la tâche</span>
+            <!-- Sprint associé -->
+            @if (Model.Sprint != null)
+            {
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Sprint associé</h3>
+                        <a asp-controller="Sprints" asp-action="Details" asp-route-id="@Model.Sprint.SprintID"
+                           class="px-3 py-1 text-sm text-gray-600 border rounded hover:bg-gray-50">
+                            Voir
                         </a>
-                        <a asp-action="Delete" asp-route-id="@Model.TacheID"
-                           class="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition flex items-center justify-center space-x-2">
-                            <i class="fas fa-trash-alt"></i>
-                            <span class="font-medium">Supprimer</span>
-                        </a>
-                    }
-                    else if (Model.AssigneeID.HasValue && Model.AssigneeID.Value == current)
-                    {
-                        <div class="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            Vous pouvez changer le statut depuis la liste des tâches
+                    </div>
+
+                    <div class="flex items-center space-x-3 p-3 rounded-lg border border-gray-100">
+                        <div class="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-running text-white"></i>
                         </div>
+                        <div>
+                            <div class="font-medium text-gray-800">@Model.Sprint.Nom</div>
+                            <div class="text-xs text-gray-500">
+                                @Model.Sprint.DateDebut.ToString("dd MMM yyyy") - @Model.Sprint.DateFin.ToString("dd MMM yyyy")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Projet associé -->
+            @if (Model.Projet != null)
+            {
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Projet associé</h3>
+                        <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Projet.ProjectID"
+                           class="px-3 py-1 text-sm text-gray-600 border rounded hover:bg-gray-50">
+                            Voir
+                        </a>
+                    </div>
+
+                    <div class="flex items-center space-x-3 p-3 rounded-lg border border-gray-100">
+                        <div class="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">@(Model.Projet.CleProjet ?? "P")</span>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-800">@Model.Projet.Nom</div>
+                            <div class="text-xs text-gray-500">@(Model.Projet.CleProjet ?? "Aucune clé")</div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Commentaires -->
+            @* <div class="bg-white rounded-xl shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">Commentaires (@(Model.Commentaires?.Count() ?? 0))</h3>
+                </div>
+
+                <div class="space-y-3">
+                    @if (Model.Commentaires != null && Model.Commentaires.Any())
+                    {
+                        foreach (var c in Model.Commentaires.OrderByDescending(cm => cm.DateCreation))
+                        {
+                            <div class="flex items-start space-x-3 p-3 rounded-lg border border-gray-100">
+                                <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
+                                    @(c.Utilisateur?.Nom?.Substring(0, 1).ToUpper() ?? "?")
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="font-medium text-gray-800 text-sm">
+                                            @(c.Utilisateur?.Nom ?? c.Utilisateur?.Email ?? "Utilisateur")
+                                        </span>
+                                        <span class="text-xs text-gray-500">
+                                            @c.DateCreation.ToString("dd MMM yyyy HH:mm")
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-700 text-sm">@c.Contenu</p>
+                                </div>
+                            </div>
+                        }
                     }
                     else
                     {
-                        <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
-                            <i class="fas fa-lock mr-2"></i>
-                            Vous n'avez pas les droits pour modifier cette tâche
-                        </div>
+                        <div class="text-gray-500 italic text-center py-4">Aucun commentaire pour cette tâche.</div>
                     }
                 </div>
-            </div>
-
-            <!-- Bouton retour -->
-            <a asp-action="Index"
-               class="w-full bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition flex items-center justify-center space-x-2 font-semibold">
-                <i class="fas fa-arrow-left"></i>
-                <span>Retour à la liste</span>
-            </a>
+            </div> *@
         </div>
+
+        <!-- Colonne droite (1/3) -->
+        <aside class="space-y-6">
+
+            @if (canManageThisTask)
+            {
+                <!-- Actions -->
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h4 class="font-semibold text-gray-800 mb-2">Actions</h4>
+                    <div class="space-y-2">
+                        <a asp-action="Edit" asp-route-id="@Model.TacheID"
+                           class="block px-4 py-2 border rounded text-center hover:bg-gray-50">
+                            Modifier la tâche
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model.TacheID"
+                           class="block px-4 py-2 bg-red-600 text-white rounded text-center hover:bg-red-700">
+                            Supprimer
+                        </a>
+                    </div>
+                </div>
+            }
+            else if (Model.AssigneeID.HasValue && Model.AssigneeID.Value == current)
+            {
+                <!-- Info pour l'assigné -->
+                <div class="bg-blue-50 rounded-xl shadow p-6 border border-blue-200">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                        <h3 class="font-bold text-gray-800">Information</h3>
+                    </div>
+                    <p class="text-sm text-gray-700">
+                        Vous pouvez changer le statut de cette tâche depuis la liste des tâches.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <!-- Pas de droits -->
+                <div class="bg-gray-50 rounded-xl shadow p-6 border border-gray-200">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <i class="fas fa-lock text-gray-600 text-xl"></i>
+                        <h3 class="font-bold text-gray-800">Accès limité</h3>
+                    </div>
+                    <p class="text-sm text-gray-700">
+                        Vous n'avez pas les droits pour modifier cette tâche.
+                    </p>
+                </div>
+            }
+
+            <!-- Résumé rapide -->
+            @* <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow p-6 border border-teal-200">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-bar text-white text-lg"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">Résumé</h3>
+                </div>
+                <div class="space-y-3 text-sm text-gray-700">
+                    <div class="bg-white rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">ID</span>
+                            <span class="font-bold text-gray-800">#@Model.TacheID</span>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Estimation</span>
+                            <span class="font-bold text-gray-800">@Model.EstimationDur h</span>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Restant</span>
+                            <span class="font-bold text-gray-800">@Model.TempsRestant h</span>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Commentaires</span>
+                            <span class="font-bold text-gray-800">@(Model.Commentaires?.Count() ?? 0)</span>
+                        </div>
+                    </div>
+                </div>
+            </div> *@
+        </aside>
     </div>
 </div>
 

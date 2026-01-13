@@ -5,134 +5,246 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">Modifier la tâche</h1>
-
-    <form asp-action="Edit" method="post" class="bg-white p-6 rounded-xl shadow">
-        @Html.AntiForgeryToken()
-
-        <input type="hidden" asp-for="TacheID" />
-        <input type="hidden" asp-for="CreateurID" />
-
-        <div asp-validation-summary="ModelOnly" class="text-sm text-red-600 mb-4"></div>
-
-        <!-- 🔹 Titre -->
-        <div class="mb-4">
-            <label asp-for="Titre" class="block text-sm font-medium text-gray-700 mb-1">
-                Titre de la tâche
-            </label>
-            <input asp-for="Titre" class="w-full border rounded px-3 py-2" />
-            <span asp-validation-for="Titre" class="text-sm text-red-600"></span>
-        </div>
-
-        <!-- 🔹 Description -->
-        <div class="mb-4">
-            <label asp-for="Description" class="block text-sm font-medium text-gray-700 mb-1">
-                Description détaillée
-            </label>
-            <textarea asp-for="Description" rows="4" class="w-full border rounded px-3 py-2"></textarea>
-            <span asp-validation-for="Description" class="text-sm text-red-600"></span>
-        </div>
-
-        <!-- 🔹 Type / Priorité / Statut -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-                <label asp-for="Type" class="block text-sm font-medium text-gray-700 mb-1">
-                    Type de tâche
-                </label>
-                <select asp-for="Type" asp-items="ViewBag.Types" class="w-full border rounded px-3 py-2"></select>
-            </div>
-
-            <div>
-                <label asp-for="Priorite" class="block text-sm font-medium text-gray-700 mb-1">
-                    Priorité
-                </label>
-                <select asp-for="Priorite" asp-items="ViewBag.Priorites" class="w-full border rounded px-3 py-2"></select>
-            </div>
-
-            <div>
-                <label asp-for="Statut" class="block text-sm font-medium text-gray-700 mb-1">
-                    Statut actuel
-                </label>
-                <select asp-for="Statut" asp-items="ViewBag.Statuts" class="w-full border rounded px-3 py-2"></select>
-            </div>
-        </div>
-
-        <!-- 🔹 Estimation / Temps restant -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-                <label asp-for="EstimationDur" class="block text-sm font-medium text-gray-700 mb-1">
-                    Estimation (heures)
-                </label>
-                <input asp-for="EstimationDur" type="number" step="0.1"
-                       class="w-full border rounded px-3 py-2" />
-            </div>
-
-            <div>
-                <label asp-for="TempsRestant" class="block text-sm font-medium text-gray-700 mb-1">
-                    Temps restant (heures)
-                </label>
-                <input asp-for="TempsRestant" type="number" step="0.1"
-                       class="w-full border rounded px-3 py-2" />
-            </div>
-        </div>
-
-        <!-- 🔹 Projet -->
-        <div class="mb-4">
-            <label asp-for="ProjectID" class="block text-sm font-medium text-gray-700 mb-1">
-                Projet associé
-            </label>
-            <select asp-for="ProjectID"
-                    id="ProjectSelect"
-                    asp-items="ViewBag.Projets"
-                    class="w-full border rounded px-3 py-2">
-            </select>
-        </div>
-
-        <!-- 🔹 Sprint / Équipe / Assigné -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Sprint
-                </label>
-                <select asp-for="SprintID" id="SprintSelect"
-                        class="w-full border rounded px-3 py-2">
-                    <option value="">-- Aucun --</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Équipe
-                </label>
-                <select id="EquipeSelect"
-                        class="w-full border rounded px-3 py-2">
-                    <option value="">-- Choisir une équipe --</option>
-                </select>
-            </div>
-
-            <div>
-                <label asp-for="AssigneeID" class="block text-sm font-medium text-gray-700 mb-1">
-                    Assigné à
-                </label>
-                <select asp-for="AssigneeID"
-                        id="AssigneeSelect"
-                        class="w-full border rounded px-3 py-2">
-                    <option value="">-- Aucun --</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- 🔹 Actions -->
-        <div class="flex justify-end gap-2">
-            <a asp-action="Index" class="px-4 py-2 border rounded">Annuler</a>
-            <button type="submit" class="px-4 py-2 rounded bg-teal-600 text-white">
-                Enregistrer les modifications
-            </button>
-        </div>
-    </form>
+<!-- En-tête -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Modifier la tâche</h2>
+    <p class="text-gray-600">Modifiez les informations de votre tâche</p>
 </div>
 
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Formulaire principal (2/3) -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form asp-action="Edit" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="TacheID" />
+                <input type="hidden" asp-for="CreateurID" />
+
+                @* Bloc résumé de validation - Affiché uniquement s'il y a des erreurs *@
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3 mt-0.5"></i>
+                            <div class="flex-1">
+                                <h3 class="text-red-800 font-semibold mb-2">Erreurs de validation</h3>
+                                <div asp-validation-summary="ModelOnly" class="text-red-700 text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Titre de la tâche -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-tasks text-teal-600 mr-2"></i>
+                        Titre de la tâche <span class="text-red-500">*</span>
+                    </label>
+                    <input asp-for="Titre"
+                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"
+                           placeholder="Titre de la tâche" />
+                    <span asp-validation-for="Titre" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-align-left text-teal-600 mr-2"></i>
+                        Description détaillée
+                    </label>
+                    <textarea asp-for="Description"
+                              rows="4"
+                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200 resize-none"
+                              placeholder="Description de la tâche"></textarea>
+                    <span asp-validation-for="Description" class="text-red-500 text-sm mt-1 block"></span>
+                </div>
+
+                <!-- Type / Priorité / Statut -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-tag text-teal-600 mr-2"></i>
+                            Type de tâche
+                        </label>
+                        <select asp-for="Type"
+                                asp-items="ViewBag.Types"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"></select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-exclamation-circle text-teal-600 mr-2"></i>
+                            Priorité
+                        </label>
+                        <select asp-for="Priorite"
+                                asp-items="ViewBag.Priorites"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"></select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-info-circle text-teal-600 mr-2"></i>
+                            Statut actuel
+                        </label>
+                        <select asp-for="Statut"
+                                asp-items="ViewBag.Statuts"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"></select>
+                    </div>
+                </div>
+
+                <!-- Estimation / Temps restant -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-clock text-teal-600 mr-2"></i>
+                            Estimation (heures)
+                        </label>
+                        <input asp-for="EstimationDur"
+                               type="number"
+                               step="0.1"
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"
+                               placeholder="0.0" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-hourglass-half text-teal-600 mr-2"></i>
+                            Temps restant (heures)
+                        </label>
+                        <input asp-for="TempsRestant"
+                               type="number"
+                               step="0.1"
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"
+                               placeholder="0.0" />
+                    </div>
+                </div>
+
+                <!-- Projet -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-project-diagram text-teal-600 mr-2"></i>
+                        Projet associé
+                    </label>
+                    <select asp-for="ProjectID"
+                            id="ProjectSelect"
+                            asp-items="ViewBag.Projets"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200"></select>
+                </div>
+
+                <!-- Sprint / Équipe / Assigné -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-running text-teal-600 mr-2"></i>
+                            Sprint
+                        </label>
+                        <select asp-for="SprintID"
+                                id="SprintSelect"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200">
+                            <option value="">-- Aucun --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-users text-teal-600 mr-2"></i>
+                            Équipe
+                        </label>
+                        <select id="EquipeSelect"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200">
+                            <option value="">-- Choisir une équipe --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-user text-teal-600 mr-2"></i>
+                            Assigné à
+                        </label>
+                        <select asp-for="AssigneeID"
+                                id="AssigneeSelect"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 transition duration-200">
+                            <option value="">-- Aucun --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex gap-3 pt-4 border-t border-gray-200">
+                    <button type="submit"
+                            class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center space-x-2">
+                        <i class="fas fa-save"></i>
+                        <span>Enregistrer</span>
+                    </button>
+                    <a asp-action="Index"
+                       class="bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transition duration-200 flex items-center space-x-2">
+                        <i class="fas fa-times"></i>
+                        <span>Annuler</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Colonne droite - Informations (1/3) -->
+    <div class="space-y-6">
+
+        <!-- Carte d'avertissement -->
+        <div class="bg-amber-50 rounded-xl shadow-lg p-6 border border-amber-200">
+            <div class="flex items-center space-x-3 mb-3">
+                <i class="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
+                <h3 class="font-bold text-gray-800">Attention</h3>
+            </div>
+            <p class="text-sm text-gray-700">
+                Les modifications apportées affecteront l'historique et les dépendances de cette tâche.
+            </p>
+        </div>
+
+        <!-- Carte informations rapides -->
+        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-lg p-6 border border-teal-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-info-circle text-white text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Conseils</h3>
+            </div>
+            <ul class="space-y-2 text-sm text-gray-700">
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Sélectionnez d'abord le projet pour charger les sprints et équipes</span>
+                </li>
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>Choisissez une équipe pour assigner la tâche à un membre</span>
+                </li>
+                <li class="flex items-start space-x-2">
+                    <i class="fas fa-check text-teal-600 mt-1"></i>
+                    <span>L'estimation aide à planifier le sprint efficacement</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Carte actions dangereuses -->
+        <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-red-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-red-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Zone dangereuse</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                Supprimer cette tâche supprimera toutes les données associées de manière permanente.
+            </p>
+            <a asp-action="Delete" asp-route-id="@Model.TacheID"
+               onclick="return confirm('⚠️ ATTENTION : Êtes-vous sûr de vouloir supprimer cette tâche ?\n\nToutes les données seront définitivement supprimées.');"
+               class="w-full bg-red-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition duration-200 flex items-center justify-center space-x-2">
+                <i class="fas fa-trash-alt"></i>
+                <span>Supprimer la tâche</span>
+            </a>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     @{
@@ -176,25 +288,19 @@
             equipeSelect.disabled = false;
         }
 
-        // Charge les membres en excluant ScrumMaster et ProductOwner.
-        // Si l'assignee actuel est exclu, on recharge la liste complète pour inclure la sélection existante.
         async function loadMembres(equipeId) {
             if (!equipeId) { reset(assigneeSelect, "-- Aucun --"); return; }
             reset(assigneeSelect, "Chargement...");
-            // 1) essayer sans les leads
             const res = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}&excludeLeads=true`);
             let data = await res.json();
             let containsSelected = data.some(m => String(m.userID) === String(selectedAssignee));
 
-            // 2) si selection existante (édition) et non présente, récupérer la liste complète pour inclure l'assignee
             if (selectedAssignee && !containsSelected) {
                 const fullRes = await fetch(`/Taches/GetMembresByEquipe?equipeId=${equipeId}&excludeLeads=false`);
                 const fullData = await fullRes.json();
-                // fusionner : garder ordre des non-leads puis assurer présence du selected
                 const merged = [...data];
                 const selectedItem = fullData.find(m => String(m.userID) === String(selectedAssignee));
                 if (selectedItem) {
-                    // si absent, l'ajouter en tête pour visibilité
                     merged.unshift(selectedItem);
                 }
                 data = merged;
@@ -217,18 +323,14 @@
             loadMembres(equipeSelect.value);
         });
 
-        // 🔥 Préchargement à l’ouverture
         document.addEventListener("DOMContentLoaded", () => {
             if (projectSelect.value) {
                 loadSprints(projectSelect.value);
                 loadEquipes(projectSelect.value);
-                // si une équipe est déjà sélectionnée (cas postback), déclencher le chargement des membres
                 if (equipeSelect.value) {
                     loadMembres(equipeSelect.value);
                 }
             }
         });
     </script>
-
-
 }
